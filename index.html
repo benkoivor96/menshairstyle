@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Men's Hairstyle — Frizerski Salon Zagreb</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES
+   ============================================================ */
+:root {
+  --bg-main: #111111;
+  --bg-alt: #161616;
+  --bg-card: #1A1A1A;
+  --gold: #C2A47E;
+  --gold-hover: #a88d6a;
+  --white: #FFFFFF;
+  --text-body: #D1D1D1;
+  --text-muted: #8A8A8A;
+  --border-gold: rgba(194,164,126,0.15);
+  --border-gold-hover: rgba(194,164,126,0.45);
+  --container: 1100px;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px;
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
+  background: var(--bg-main);
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a { text-decoration: none; color: inherit; }
+img { display: block; max-width: 100%; }
+ul { list-style: none; }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 560px;
+}
+
+.text-center { text-align: center; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 0 32px;
+  background: var(--gold);
+  color: #000;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.btn:hover {
+  background: var(--gold-hover);
+  transform: scale(1.05);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 0 32px;
+  background: transparent;
+  color: var(--gold);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-outline:hover {
+  background: var(--gold);
+  color: #000;
+  transform: scale(1.05);
+}
+
+/* ---- Image Placeholder ---- */
+.img-placeholder {
+  background: #222222;
+  border: 2px dashed #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.img-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid #2a2a2a;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* ---- Scroll Reveal ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+.reveal-d3 { transition-delay: 0.3s; }
+.reveal-d4 { transition-delay: 0.4s; }
+.reveal-d5 { transition-delay: 0.5s; }
+
+/* ============================================================
+   1. NAVIGATION
+   ============================================================ */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(17, 17, 17, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-gold);
+  height: 72px;
+}
+.nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+}
+.nav-logo {
+  width: 120px;
+  height: 44px;
+}
+.nav-logo .img-placeholder {
+  width: 100%;
+  height: 100%;
+  font-size: 10px;
+  border-radius: 4px;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.25s;
+}
+.nav-links a:hover { color: var(--gold); }
+
+.nav-cta {
+  height: 42px;
+  padding: 0 24px;
+  font-size: 12px;
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 1100;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+.hamburger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--gold);
+  transition: all 0.3s;
+}
+.hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger.active span:nth-child(2) { opacity: 0; }
+.hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+/* Mobile menu */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13,13,13,0.97);
+  z-index: 1050;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+.mobile-menu.open { display: flex; }
+.mobile-menu a {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-body);
+  transition: color 0.25s;
+}
+.mobile-menu a:hover { color: var(--gold); }
+
+/* ============================================================
+   2. HERO SECTION
+   ============================================================ */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hero-bg .img-placeholder {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  font-size: 16px;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(to bottom,
+      rgba(0,0,0,0.45) 0%,
+      rgba(0,0,0,0.3) 40%,
+      rgba(0,0,0,0.5) 100%
+    );
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 620px;
+  padding: 0 24px;
+}
+.hero-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroFade 0.7s 0.2s forwards;
+}
+.hero-title {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--white);
+  margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroFade 0.7s 0.4s forwards;
+}
+.hero-desc {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-body);
+  max-width: 480px;
+  margin: 0 auto 32px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroFade 0.7s 0.6s forwards;
+}
+.hero .btn {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroFade 0.7s 0.8s forwards;
+}
+@keyframes heroFade {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   3. CONTACT BAR (inside hero, at bottom)
+   ============================================================ */
+.contact-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  background: rgba(22, 22, 22, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border-gold);
+  padding: 28px 24px;
+}
+.contact-bar .container {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+.contact-item { text-align: center; }
+.contact-item .c-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.contact-item .c-value {
+  font-size: 14px;
+  color: var(--text-body);
+}
+.contact-item a {
+  transition: color 0.25s;
+}
+.contact-item a:hover { color: var(--gold); }
+
+/* ============================================================
+   4. ABOUT SECTION
+   ============================================================ */
+.about {
+  background: #F5F0EA;
+  padding: 100px 0;
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.about-img {
+  position: relative;
+}
+.about-img .img-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+  background: #e0dcd6;
+  border: 2px dashed #c5c0b8;
+  color: #999;
+}
+.about-img-frame {
+  display: none;
+}
+.about-text .section-label {
+  color: var(--gold);
+}
+.about-text .section-title {
+  margin-bottom: 20px;
+  color: #1a1a1a;
+  text-transform: uppercase;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.15;
+}
+.about-text p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #666666;
+  margin-bottom: 32px;
+}
+.about-text .btn {
+  width: 100%;
+  max-width: 340px;
+  height: 56px;
+  font-size: 14px;
+  letter-spacing: 3px;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   5. SERVICES SECTION
+   ============================================================ */
+.services {
+  background: var(--bg-alt);
+  padding: 100px 0;
+}
+.services-header {
+  margin-bottom: 56px;
+}
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.service-card {
+  background: var(--bg-card);
+  padding: 36px 28px;
+  border: 1px solid rgba(194,164,126,0.06);
+  border-radius: 4px;
+  transition: all 0.35s ease;
+}
+.service-card:hover {
+  border-color: var(--border-gold-hover);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+}
+.service-icon {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 20px;
+}
+.service-icon .img-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-size: 8px;
+}
+.service-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 10px;
+}
+.service-card p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.services-deco {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.services-deco .img-placeholder {
+  width: 100%;
+  height: 220px;
+  border-radius: 4px;
+}
+
+.services-row2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 740px;
+  margin: 0 auto 48px;
+}
+
+.services-cta {
+  text-align: center;
+  margin-top: 16px;
+}
+
+/* ============================================================
+   6. WHY US SECTION
+   ============================================================ */
+.why {
+  background: var(--bg-main);
+  padding: 100px 0;
+}
+.why-header { margin-bottom: 56px; }
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.why-card {
+  text-align: center;
+  padding: 40px 32px;
+  position: relative;
+}
+.why-card:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--border-gold), transparent);
+}
+.why-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 24px;
+}
+.why-icon .img-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-size: 8px;
+}
+.why-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 12px;
+}
+.why-card p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   7. INSTAGRAM SECTION
+   ============================================================ */
+.instagram {
+  background: var(--bg-alt);
+  padding: 100px 0;
+}
+.insta-header { margin-bottom: 48px; }
+.insta-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 40px;
+}
+.insta-grid .img-placeholder {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.insta-grid .img-placeholder:hover {
+  border-color: var(--border-gold-hover);
+  transform: scale(1.03);
+}
+.insta-cta { text-align: center; }
+
+/* ============================================================
+   8. REVIEWS SECTION
+   ============================================================ */
+.reviews {
+  background: var(--bg-main);
+  padding: 100px 0;
+}
+.reviews-header { margin-bottom: 56px; }
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.review-card {
+  background: var(--bg-card);
+  padding: 36px 28px;
+  border: 1px solid rgba(194,164,126,0.06);
+  border-radius: 4px;
+}
+.review-quote-icon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 20px;
+}
+.review-quote-icon .img-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  font-size: 7px;
+}
+.review-card blockquote {
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.75;
+  color: var(--text-body);
+  margin-bottom: 24px;
+}
+.review-stars {
+  color: var(--gold);
+  font-size: 14px;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+}
+.review-author {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+/* ============================================================
+   9. FOOTER
+   ============================================================ */
+.footer {
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border-gold);
+  padding: 64px 0 0;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 40px;
+  padding-bottom: 48px;
+}
+.footer-brand-logo {
+  width: 120px;
+  height: 44px;
+  margin-bottom: 16px;
+}
+.footer-brand-logo .img-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  font-size: 10px;
+}
+.footer-brand p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+.footer-col h4 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+.footer-col li { margin-bottom: 10px; }
+.footer-col a {
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: color 0.25s;
+}
+.footer-col a:hover { color: var(--gold); }
+.footer-col .contact-line {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.04);
+  padding: 20px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .hero-title { font-size: 40px; }
+
+  .about-grid { grid-template-columns: 1fr; gap: 40px; }
+  .about-img .img-placeholder { aspect-ratio: 16 / 10; }
+  .about-text { text-align: center; }
+  .about-text .btn { width: 100%; max-width: 100%; }
+
+  .services-grid { grid-template-columns: 1fr; }
+  .services-row2 { grid-template-columns: 1fr; max-width: 100%; }
+  .services-deco { grid-template-columns: 1fr; }
+  .services-deco .img-placeholder { height: 180px; }
+
+  .why-grid { grid-template-columns: 1fr; }
+  .why-card:not(:last-child)::after { display: none; }
+  .why-card { padding: 32px 24px; }
+
+  .insta-grid { grid-template-columns: repeat(3, 1fr); }
+
+  .reviews-grid { grid-template-columns: 1fr; }
+
+  .footer-grid { grid-template-columns: 1fr; text-align: center; }
+  .footer-brand-logo { margin: 0 auto 16px; }
+
+  .contact-bar .container { gap: 24px; }
+
+  .btn { width: 100%; }
+  .btn-outline { width: 100%; }
+
+  section, .about, .services, .why, .instagram, .reviews {
+    padding: 64px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title { font-size: 34px; }
+  .insta-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     1. NAVIGATION
+     ============================================================ -->
+<nav class="nav">
+  <div class="container">
+    <div class="nav-logo">
+      <div class="img-placeholder">[LOGO]</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     2. HERO SECTION
+     ============================================================ -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="img-placeholder">[IMAGE: Hero — barber salon photo / barber tools]</div>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <p class="hero-label">TVOJ STIL, NAŠA STRAST</p>
+    <h1 class="hero-title">VRIJEME ZA ŠIŠANJE?</h1>
+    <p class="hero-desc">Rezerviraj termin i uživaj u vrhunskoj njezi kose i brade u opuštenoj atmosferi, gdje stil i tradicija idu ruku pod ruku.</p>
+    <a href="tel:+385917397846" class="btn">Naruči se</a>
+  </div>
+
+  <!-- Contact bar inside hero -->
+  <div class="contact-bar" id="contact-bar">
+    <div class="container">
+      <div class="contact-item">
+        <div class="c-label">Adresa</div>
+        <div class="c-value">Horvaćanska cesta 160, 10000, Zagreb</div>
+      </div>
+      <div class="contact-item">
+        <div class="c-label">Broj</div>
+        <div class="c-value"><a href="tel:+385917397846">091 739 7846</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="c-label">Email</div>
+        <div class="c-value"><a href="mailto:info@menshairstyle.eu">info@menshairstyle.eu</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     4. ABOUT SECTION
+     ============================================================ -->
+<section class="about" id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-img reveal">
+        <div class="img-placeholder">[IMAGE: O nama — barber at work]</div>
+        <div class="about-img-frame"></div>
+      </div>
+      <div class="about-text">
+        <p class="section-label reveal">O nama</p>
+        <h2 class="section-title reveal reveal-d1">Mi vjerujemo da frizer nije samo posao, već umjetnost.</h2>
+        <p class="reveal reveal-d2">Kod nas je sve o vama! Naš cilj je osigurati da svaki klijent izađe iz salona s osmijehom i zadovoljstvom. U našem salonu nudimo personalizirane usluge koje naglašavaju vašu ljepotu i stil.</p>
+        <a href="tel:+385917397846" class="btn reveal reveal-d3">Rezerviraj termin</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     5. SERVICES SECTION
+     ============================================================ -->
+<section class="services" id="services">
+  <div class="container">
+    <div class="services-header text-center reveal">
+      <p class="section-label">Naše Usluge</p>
+      <h2 class="section-title">U našoj ponudi pronaći ćete sve što vam treba za savršen izgled:</h2>
+    </div>
+
+    <!-- Row 1: 3 cards -->
+    <div class="services-grid">
+      <div class="service-card reveal">
+        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Šišanje kose i frizure</h3>
+        <p>Od preciznog skin fadea do oblikovanja duge kose – tvoj stil, naša misija.</p>
+      </div>
+      <div class="service-card reveal reveal-d1">
+        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Oblikovanje Brade</h3>
+        <p>Oblikujemo bradu prema crtama tvog lica i tvojim željama, za savršen izgled.</p>
+      </div>
+      <div class="service-card reveal reveal-d2">
+        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Bojanje kose</h3>
+        <p>Osvježi svoj izgled živahnim ili prirodnim nijansama koje ističu tvoju posebnost.</p>
+      </div>
+    </div>
+
+    <!-- Decorative images -->
+    <div class="services-deco">
+      <div class="img-placeholder reveal">[IMAGE: Salon dekoracija 1]</div>
+      <div class="img-placeholder reveal reveal-d1">[IMAGE: Salon dekoracija 2]</div>
+    </div>
+
+    <!-- Row 2: 2 cards -->
+    <div class="services-row2">
+      <div class="service-card reveal">
+        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Pranje Kose</h3>
+        <p>Uživaj u opuštajućem pranju s njegujućim tretmanima koji tvojoj kosi vraćaju čvrstoću i zdravlje.</p>
+      </div>
+      <div class="service-card reveal reveal-d1">
+        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Dječje Šišanje</h3>
+        <p>Brzo i bez stresa, uz osmijehe – jer i mališani zaslužuju moderne i cool frizure.</p>
+      </div>
+    </div>
+
+    <div class="services-cta reveal">
+      <a href="tel:+385917397846" class="btn">Rezerviraj termin</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     6. WHY US SECTION
+     ============================================================ -->
+<section class="why">
+  <div class="container">
+    <div class="why-header text-center reveal">
+      <p class="section-label">Zašto mi?</p>
+      <h2 class="section-title">ZAŠTO IZABRATI NAS</h2>
+      <p class="section-sub mx-auto">Profesionalnost na prvom mjestu s naglaskom na stručnost, kvalitetu proizvoda i vaš jedinstveni stil.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-card reveal">
+        <div class="why-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Vrhunske Vještine</h3>
+        <p>Godine iskustva u kreiranju frizura i stilova prilagođenih svakom klijentu.</p>
+      </div>
+      <div class="why-card reveal reveal-d1">
+        <div class="why-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Prijateljska Atmosfera</h3>
+        <p>Opušteno i ugodno okruženje gdje se uvijek osjećaš dobrodošlo.</p>
+      </div>
+      <div class="why-card reveal reveal-d2">
+        <div class="why-icon"><div class="img-placeholder">[ICON]</div></div>
+        <h3>Kvalitetna Oprema</h3>
+        <p>Koristimo samo najkvalitetnije proizvode kako bi tvoja kosa i brada bili savršeni.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     7. INSTAGRAM SECTION
+     ============================================================ -->
+<section class="instagram">
+  <div class="container">
+    <div class="insta-header text-center reveal">
+      <p class="section-label">Social</p>
+      <h2 class="section-title">ZAPRATI NAS NA INSTAGRAMU</h2>
+    </div>
+    <div class="insta-grid">
+      <div class="img-placeholder reveal">[IG: 1]</div>
+      <div class="img-placeholder reveal reveal-d1">[IG: 2]</div>
+      <div class="img-placeholder reveal reveal-d2">[IG: 3]</div>
+      <div class="img-placeholder reveal reveal-d3">[IG: 4]</div>
+      <div class="img-placeholder reveal reveal-d4">[IG: 5]</div>
+    </div>
+    <div class="insta-cta reveal">
+      <a href="https://www.instagram.com/men_s_hairstyle/" target="_blank" rel="noopener" class="btn-outline">Zaprati nas na Instagramu</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     8. REVIEWS SECTION
+     ============================================================ -->
+<section class="reviews">
+  <div class="container">
+    <div class="reviews-header text-center reveal">
+      <p class="section-label">Recenzije</p>
+      <h2 class="section-title">ŠTO KAŽU NAŠI KLIJENTI</h2>
+      <p class="section-sub mx-auto">Pročitaj neke od naših recenzija iz prve ruke.</p>
+    </div>
+    <div class="reviews-grid">
+      <div class="review-card reveal">
+        <div class="review-quote-icon"><div class="img-placeholder">[❝]</div></div>
+        <blockquote>Već dugo nisam bio ovako zadovoljan frizerskom uslugom. Uvijek mi je zadovoljstvo doći i svaki put znam da ću izaći s frizurom koju sam i želio. Preporuke svima!</blockquote>
+        <div class="review-stars">★ ★ ★ ★ ★</div>
+        <div class="review-author">Marko K.</div>
+      </div>
+      <div class="review-card reveal reveal-d1">
+        <div class="review-quote-icon"><div class="img-placeholder">[❝]</div></div>
+        <blockquote>Frizerski salon ima top uslugu. Već sam nekoliko puta bio ovdje na šišanju i svaki put usluga je bila na visokom nivou. Ambijent je ugodan, a atmosfera opuštajuća. Definitivno moj omiljeni salon!</blockquote>
+        <div class="review-stars">★ ★ ★ ★ ★</div>
+        <div class="review-author">Ivan L.</div>
+      </div>
+      <div class="review-card reveal reveal-d2">
+        <div class="review-quote-icon"><div class="img-placeholder">[❝]</div></div>
+        <blockquote>Svaki put kad dođem ovdje, imam osjećaj kao da sam kod kuće. Frizura mi uvijek izgleda fantastično nakon posjeta. Nema nikakvih nezadovoljstava, uvijek se vraćam!</blockquote>
+        <div class="review-stars">★ ★ ★ ★ ★</div>
+        <div class="review-author">Ante J.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     9. FOOTER
+     ============================================================ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-brand-logo">
+          <div class="img-placeholder">[LOGO]</div>
+        </div>
+        <p>Mi vjerujemo da frizer nije samo posao, već umjetnost.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Izbornik</h4>
+        <ul>
+          <li><a href="#">Početna</a></li>
+          <li><a href="tel:+385917397846">Naruči se</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Kontakt</h4>
+        <div class="contact-line">Horvaćanska cesta 160, 10000, Zagreb</div>
+        <div class="contact-line"><a href="tel:+385917397846">091 739 7846</a></div>
+        <div class="contact-line"><a href="mailto:info@menshairstyle.eu">info@menshairstyle.eu</a></div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2025 Men's Hairstyle. Sva prava pridržana.
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+// Scroll reveal with IntersectionObserver
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, {
+  threshold: 0.12,
+  rootMargin: '0px 0px -40px 0px'
+});
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+</script>
+
+</body>
+</html>
