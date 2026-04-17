@@ -445,137 +445,166 @@ ul { list-style: none; }
 }
 
 /* ============================================================
-   5. SERVICES SECTION
+   5. SERVICES SECTION — image center, items around it
    ============================================================ */
 .services {
-  background: var(--bg-alt);
+  background: #FFFFFF;
   padding: 100px 0;
 }
 .services-header {
   margin-bottom: 56px;
 }
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 24px;
+.services-header .section-title {
+  color: #1a1a1a;
+  text-transform: uppercase;
 }
-.service-card {
-  background: var(--bg-card);
-  padding: 36px 28px;
-  border: 1px solid rgba(194,164,126,0.06);
-  border-radius: 4px;
-  transition: all 0.35s ease;
+
+.services-layout {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 600px;
 }
-.service-card:hover {
-  border-color: var(--border-gold-hover);
-  transform: translateY(-6px);
-  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+
+/* Center image */
+.services-center-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  z-index: 2;
 }
-.service-icon {
-  width: 52px;
-  height: 52px;
-  margin-bottom: 20px;
-}
-.service-icon .img-placeholder {
+.services-center-img img {
   width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  font-size: 8px;
+  height: auto;
+  display: block;
+  filter: grayscale(100%);
 }
-.service-card h3 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--white);
+.services-center-img .img-placeholder {
+  width: 100%;
+  height: 480px;
+  background: #ddd;
+  border: 2px dashed #bbb;
+  color: #999;
+}
+
+/* Service items positioned around center */
+.svc-item {
+  position: absolute;
+  max-width: 260px;
+  z-index: 1;
+}
+.svc-item-icon {
+  width: 56px;
+  height: 56px;
   margin-bottom: 10px;
 }
-.service-card p {
-  font-size: 14px;
-  line-height: 1.7;
-  color: var(--text-muted);
-}
-
-.services-deco {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 24px;
-}
-.services-deco .img-placeholder {
+.svc-item-icon .img-placeholder {
   width: 100%;
-  height: 220px;
-  border-radius: 4px;
+  height: 100%;
+  background: transparent;
+  border: 2px dashed #c5c0b8;
+  border-radius: 50%;
+  color: #999;
+  font-size: 8px;
+}
+.svc-item h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+.svc-item p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #777;
 }
 
-.services-row2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  max-width: 740px;
-  margin: 0 auto 48px;
-}
+/* Left items — text-align right */
+.svc-left { text-align: right; }
+.svc-left .svc-item-icon { margin-left: auto; }
+
+/* Right items — text-align left */
+.svc-right { text-align: left; }
+
+/* Positions */
+.svc-pos-1 { top: 0; left: 0; }
+.svc-pos-2 { top: 220px; left: 0; }
+.svc-pos-3 { bottom: 0; left: 0; }
+.svc-pos-4 { top: 0; right: 0; }
+.svc-pos-5 { bottom: 0; right: 0; }
 
 .services-cta {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 48px;
 }
 
 /* ============================================================
-   6. WHY US SECTION
+   6. WHY US SECTION — cream bg, white cards, big illustrations
    ============================================================ */
 .why {
-  background: var(--bg-main);
+  background: #F5F0EA;
   padding: 100px 0;
 }
 .why-header { margin-bottom: 56px; }
+.why-header .section-title {
+  color: #1a1a1a;
+  text-transform: uppercase;
+}
+.why-header .section-sub {
+  color: #777;
+}
 .why-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0;
+  gap: 24px;
 }
 .why-card {
+  background: #FFFFFF;
+  border-radius: 12px;
   text-align: center;
-  padding: 40px 32px;
+  padding: 40px 28px 44px;
   position: relative;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
 }
-.why-card:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 15%;
-  height: 70%;
-  width: 1px;
-  background: linear-gradient(to bottom, transparent, var(--border-gold), transparent);
-}
+.why-card:not(:last-child)::after { display: none; }
 .why-icon {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 24px;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 28px;
 }
 .why-icon .img-placeholder {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  font-size: 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  background: #f9f6f2;
+  border: 2px dashed #ddd;
+  color: #bbb;
 }
 .why-card h3 {
   font-size: 20px;
   font-weight: 700;
-  color: var(--white);
+  color: #1a1a1a;
   margin-bottom: 12px;
 }
 .why-card p {
   font-size: 14px;
   line-height: 1.7;
-  color: var(--text-muted);
+  color: #777;
 }
 
 /* ============================================================
    7. INSTAGRAM SECTION
    ============================================================ */
 .instagram {
-  background: var(--bg-alt);
+  background: #FFFFFF;
   padding: 100px 0;
+}
+.insta-header .section-title {
+  color: #1a1a1a;
+  text-transform: uppercase;
 }
 .insta-header { margin-bottom: 48px; }
 .insta-grid {
@@ -597,54 +626,159 @@ ul { list-style: none; }
 .insta-cta { text-align: center; }
 
 /* ============================================================
-   8. REVIEWS SECTION
+   8. REVIEWS SECTION — Google-style cards
    ============================================================ */
 .reviews {
-  background: var(--bg-main);
+  background: #F5F0EA;
   padding: 100px 0;
 }
-.reviews-header { margin-bottom: 56px; }
+.reviews-header { margin-bottom: 48px; }
+.reviews-header .section-title {
+  color: #1a1a1a;
+  text-transform: uppercase;
+}
+.reviews-header .section-sub {
+  color: #777;
+}
+
+/* Overall rating */
+.reviews-overall {
+  margin-bottom: 32px;
+}
+.reviews-score {
+  font-size: 48px;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.reviews-overall-stars {
+  font-size: 20px;
+  color: #F4B400;
+  letter-spacing: 2px;
+}
+
+/* Review cards grid */
 .reviews-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  margin-bottom: 40px;
 }
 .review-card {
-  background: var(--bg-card);
-  padding: 36px 28px;
-  border: 1px solid rgba(194,164,126,0.06);
-  border-radius: 4px;
+  background: #FFFFFF;
+  padding: 28px 24px;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
-.review-quote-icon {
+
+/* Card header: rating + date */
+.review-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.review-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.review-rating-num {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.review-rating-stars {
+  font-size: 14px;
+  color: #F4B400;
+  letter-spacing: 1px;
+}
+.review-date {
+  font-size: 13px;
+  color: #999;
+}
+
+/* Card body */
+.review-card-body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #444;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+/* Card footer: avatar + name + Google icon */
+.review-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+}
+.review-avatar {
   width: 36px;
   height: 36px;
-  margin-bottom: 20px;
-}
-.review-quote-icon .img-placeholder {
-  width: 100%;
-  height: 100%;
-  border-radius: 4px;
-  font-size: 7px;
-}
-.review-card blockquote {
-  font-size: 15px;
-  font-style: italic;
-  line-height: 1.75;
-  color: var(--text-body);
-  margin-bottom: 24px;
-}
-.review-stars {
-  color: var(--gold);
-  font-size: 14px;
-  letter-spacing: 4px;
-  margin-bottom: 12px;
-}
-.review-author {
+  border-radius: 50%;
+  background: #C2A47E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 2px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.review-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+}
+.review-google-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.review-google-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Leave review button */
+.reviews-cta {
+  text-align: center;
+}
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 32px;
+  background: #FFFFFF;
+  color: #1a1a1a;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--white);
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+.btn-google:hover {
+  border-color: #C2A47E;
+  background: #faf8f5;
+  transform: scale(1.03);
+}
+.btn-google svg {
+  width: 20px;
+  height: 20px;
 }
 
 /* ============================================================
@@ -717,13 +851,31 @@ ul { list-style: none; }
   .about-text { text-align: center; }
   .about-text .btn { width: 100%; max-width: 100%; }
 
-  .services-grid { grid-template-columns: 1fr; }
-  .services-row2 { grid-template-columns: 1fr; max-width: 100%; }
-  .services-deco { grid-template-columns: 1fr; }
-  .services-deco .img-placeholder { height: 180px; }
+  .services-layout {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    min-height: auto;
+  }
+  .services-center-img {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: 320px;
+    order: -1;
+  }
+  .svc-item {
+    position: static;
+    max-width: 100%;
+    text-align: center;
+  }
+  .svc-left { text-align: center; }
+  .svc-left .svc-item-icon { margin: 0 auto 10px; }
+  .svc-right .svc-item-icon { margin: 0 auto 10px; }
 
   .why-grid { grid-template-columns: 1fr; }
-  .why-card:not(:last-child)::after { display: none; }
   .why-card { padding: 32px 24px; }
 
   .insta-grid { grid-template-columns: repeat(3, 1fr); }
@@ -825,40 +977,40 @@ ul { list-style: none; }
       <h2 class="section-title">U našoj ponudi pronaći ćete sve što vam treba za savršen izgled:</h2>
     </div>
 
-    <!-- Row 1: 3 cards -->
-    <div class="services-grid">
-      <div class="service-card reveal">
-        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+    <div class="services-layout">
+      <!-- Center image -->
+      <div class="services-center-img reveal">
+        <img src="usluge.png" alt="Usluge" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=img-placeholder style=width:100%;height:480px>[IMAGE: usluge.png]</div>'">
+      </div>
+
+      <!-- Left side items -->
+      <div class="svc-item svc-left svc-pos-1 reveal">
+        <div class="svc-item-icon"><div class="img-placeholder">[ICON]</div></div>
         <h3>Šišanje kose i frizure</h3>
         <p>Od preciznog skin fadea do oblikovanja duge kose – tvoj stil, naša misija.</p>
       </div>
-      <div class="service-card reveal reveal-d1">
-        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+
+      <div class="svc-item svc-left svc-pos-2 reveal reveal-d1">
+        <div class="svc-item-icon"><div class="img-placeholder">[ICON]</div></div>
         <h3>Oblikovanje Brade</h3>
         <p>Oblikujemo bradu prema crtama tvog lica i tvojim željama, za savršen izgled.</p>
       </div>
-      <div class="service-card reveal reveal-d2">
-        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+
+      <div class="svc-item svc-left svc-pos-3 reveal reveal-d2">
+        <div class="svc-item-icon"><div class="img-placeholder">[ICON]</div></div>
         <h3>Bojanje kose</h3>
         <p>Osvježi svoj izgled živahnim ili prirodnim nijansama koje ističu tvoju posebnost.</p>
       </div>
-    </div>
 
-    <!-- Decorative images -->
-    <div class="services-deco">
-      <div class="img-placeholder reveal">[IMAGE: Salon dekoracija 1]</div>
-      <div class="img-placeholder reveal reveal-d1">[IMAGE: Salon dekoracija 2]</div>
-    </div>
-
-    <!-- Row 2: 2 cards -->
-    <div class="services-row2">
-      <div class="service-card reveal">
-        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+      <!-- Right side items -->
+      <div class="svc-item svc-right svc-pos-4 reveal reveal-d1">
+        <div class="svc-item-icon"><div class="img-placeholder">[ICON]</div></div>
         <h3>Pranje Kose</h3>
         <p>Uživaj u opuštajućem pranju s njegujućim tretmanima koji tvojoj kosi vraćaju čvrstoću i zdravlje.</p>
       </div>
-      <div class="service-card reveal reveal-d1">
-        <div class="service-icon"><div class="img-placeholder">[ICON]</div></div>
+
+      <div class="svc-item svc-right svc-pos-5 reveal reveal-d2">
+        <div class="svc-item-icon"><div class="img-placeholder">[ICON]</div></div>
         <h3>Dječje Šišanje</h3>
         <p>Brzo i bez stresa, uz osmijehe – jer i mališani zaslužuju moderne i cool frizure.</p>
       </div>
@@ -882,17 +1034,17 @@ ul { list-style: none; }
     </div>
     <div class="why-grid">
       <div class="why-card reveal">
-        <div class="why-icon"><div class="img-placeholder">[ICON]</div></div>
+        <div class="why-icon"><div class="img-placeholder">[ILLUSTRATION: Vrhunske vještine]</div></div>
         <h3>Vrhunske Vještine</h3>
         <p>Godine iskustva u kreiranju frizura i stilova prilagođenih svakom klijentu.</p>
       </div>
       <div class="why-card reveal reveal-d1">
-        <div class="why-icon"><div class="img-placeholder">[ICON]</div></div>
+        <div class="why-icon"><div class="img-placeholder">[ILLUSTRATION: Prijateljska atmosfera]</div></div>
         <h3>Prijateljska Atmosfera</h3>
         <p>Opušteno i ugodno okruženje gdje se uvijek osjećaš dobrodošlo.</p>
       </div>
       <div class="why-card reveal reveal-d2">
-        <div class="why-icon"><div class="img-placeholder">[ICON]</div></div>
+        <div class="why-icon"><div class="img-placeholder">[ILLUSTRATION: Kvalitetna oprema]</div></div>
         <h3>Kvalitetna Oprema</h3>
         <p>Koristimo samo najkvalitetnije proizvode kako bi tvoja kosa i brada bili savršeni.</p>
       </div>
@@ -923,7 +1075,7 @@ ul { list-style: none; }
 </section>
 
 <!-- ============================================================
-     8. REVIEWS SECTION
+     8. REVIEWS SECTION — Google-style
      ============================================================ -->
 <section class="reviews">
   <div class="container">
@@ -932,25 +1084,87 @@ ul { list-style: none; }
       <h2 class="section-title">ŠTO KAŽU NAŠI KLIJENTI</h2>
       <p class="section-sub mx-auto">Pročitaj neke od naših recenzija iz prve ruke.</p>
     </div>
+
+    <!-- Overall score -->
+    <div class="reviews-overall reveal">
+      <div class="reviews-score">5.00</div>
+      <div class="reviews-overall-stars">★★★★★</div>
+    </div>
+
+    <!-- Review cards -->
     <div class="reviews-grid">
+
+      <!-- Review 1 -->
       <div class="review-card reveal">
-        <div class="review-quote-icon"><div class="img-placeholder">[❝]</div></div>
-        <blockquote>Već dugo nisam bio ovako zadovoljan frizerskom uslugom. Uvijek mi je zadovoljstvo doći i svaki put znam da ću izaći s frizurom koju sam i želio. Preporuke svima!</blockquote>
-        <div class="review-stars">★ ★ ★ ★ ★</div>
-        <div class="review-author">Marko K.</div>
+        <div class="review-card-header">
+          <div class="review-rating">
+            <span class="review-rating-num">5</span>
+            <span class="review-rating-stars">★★★★★</span>
+          </div>
+          <span class="review-date">Feb 17, 2026</span>
+        </div>
+        <div class="review-card-body">
+          Bilo mi je super. Frizerka je super. Jako dobro šiša.
+        </div>
+        <div class="review-card-footer">
+          <div class="review-avatar">MP</div>
+          <span class="review-name">martina počakal</span>
+          <div class="review-google-icon">
+            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </div>
+        </div>
       </div>
+
+      <!-- Review 2 -->
       <div class="review-card reveal reveal-d1">
-        <div class="review-quote-icon"><div class="img-placeholder">[❝]</div></div>
-        <blockquote>Frizerski salon ima top uslugu. Već sam nekoliko puta bio ovdje na šišanju i svaki put usluga je bila na visokom nivou. Ambijent je ugodan, a atmosfera opuštajuća. Definitivno moj omiljeni salon!</blockquote>
-        <div class="review-stars">★ ★ ★ ★ ★</div>
-        <div class="review-author">Ivan L.</div>
+        <div class="review-card-header">
+          <div class="review-rating">
+            <span class="review-rating-num">5</span>
+            <span class="review-rating-stars">★★★★★</span>
+          </div>
+          <span class="review-date">Jan 31, 2026</span>
+        </div>
+        <div class="review-card-body">
+          Odlična usluga, primjerena cijena. Za svaku preporuku.
+        </div>
+        <div class="review-card-footer">
+          <div class="review-avatar">AI</div>
+          <span class="review-name">ALEKSANDAR IVANIŠEVIĆ</span>
+          <div class="review-google-icon">
+            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </div>
+        </div>
       </div>
+
+      <!-- Review 3 -->
       <div class="review-card reveal reveal-d2">
-        <div class="review-quote-icon"><div class="img-placeholder">[❝]</div></div>
-        <blockquote>Svaki put kad dođem ovdje, imam osjećaj kao da sam kod kuće. Frizura mi uvijek izgleda fantastično nakon posjeta. Nema nikakvih nezadovoljstava, uvijek se vraćam!</blockquote>
-        <div class="review-stars">★ ★ ★ ★ ★</div>
-        <div class="review-author">Ante J.</div>
+        <div class="review-card-header">
+          <div class="review-rating">
+            <span class="review-rating-num">5</span>
+            <span class="review-rating-stars">★★★★★</span>
+          </div>
+          <span class="review-date">Dec 19, 2025</span>
+        </div>
+        <div class="review-card-body">
+          Najbolje šišanje koje sam ikad imao. Preporučujem salon svakome. Svaka čast frizerki na ljubaznosti i kvalitetnom savjetu za šišanje i frizuru.
+        </div>
+        <div class="review-card-footer">
+          <div class="review-avatar">VP</div>
+          <span class="review-name">Vedran Petric</span>
+          <div class="review-google-icon">
+            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </div>
+        </div>
       </div>
+
+    </div>
+
+    <!-- Leave a review button -->
+    <div class="reviews-cta reveal">
+      <a href="https://search.google.com/local/writereview?placeid=TVOJ_PLACE_ID" target="_blank" rel="noopener" class="btn-google">
+        <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Ostavi recenziju
+      </a>
     </div>
   </div>
 </section>
