@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "menshairstyle",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-04-17",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "."
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+  // Dodaj u Cloudflare dashboard → Workers → menshairstyle → Settings → Variables:
+  // RAILWAY_URL = https://tvoj-railway-url.up.railway.app
+}
