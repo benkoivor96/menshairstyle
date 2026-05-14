@@ -199,6 +199,9 @@ app.delete(BASE + '/api/bookings/:id', async (req, res) => {
 //  START
 // ============================================================
 async function start() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL nije postavljen! Dodaj PostgreSQL addon u Railway dashboardu.');
+  }
   await db.init();
   console.log('Baza inicijalizirana.');
   app.listen(PORT, () => {
@@ -208,6 +211,6 @@ async function start() {
 }
 
 start().catch(err => {
-  console.error('Greška pri pokretanju:', err.message);
+  console.error('Greška pri pokretanju:', err);
   process.exit(1);
 });
