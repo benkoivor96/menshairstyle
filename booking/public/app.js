@@ -9,8 +9,12 @@ const BASE = window.BASE_PATH || '';
 let clients = [];
 let services = [];
 let bookings = [];
+let allBookingsCache = [];
 let editingClientId = null;
 let editingBookingId = null;
+let pickerDate = null;
+let pickerTime = null;
+const calStates = {};
 
 // ============================================================
 //  UTILS
@@ -20,19 +24,16 @@ function fmt(dtStr) {
   const d = new Date(dtStr);
   return d.toLocaleString('hr-HR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-
 function fmtDate(dtStr) {
   if (!dtStr) return '—';
   const d = new Date(dtStr);
   return d.toLocaleDateString('hr-HR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
 }
-
 function fmtHour(dtStr) {
   if (!dtStr) return '—';
   const d = new Date(dtStr);
   return d.toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' });
 }
-
 function toast(msg, type = 'success') {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -40,7 +41,6 @@ function toast(msg, type = 'success') {
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.className = ''; }, 3500);
 }
-
 function statusBadge(status) {
   const labels = { pending: 'Rezervirano', completed: 'Završeno', cancelled: 'Otkazano' };
   return `<span class="badge badge-${status}">${labels[status] || status}</span>`;
@@ -56,6 +56,138 @@ async function api(method, url, body) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Greška');
   return data;
+}
+
+// ============================================================
+//  MINI CALENDAR ENGINE
+// ============================================================
+const MONTHS_HR = ['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'];
+const DAYS_HR = ['Pon','Uto','Sri','Čet','Pet','Sub','Ned'];
+
+function calInit(id, { selected = null, marked = [], minDate = null, onSelect } = {}) {
+  const d = selected ? new Date(selected + 'T12:00:00') : new Date();
+  calStates[id] = { year: d.getFullYear(), month: d.getMonth(), selected, marked, minDate, onSelect };
+  calRender(id);
+}
+
+function calRender(id) {
+  const s = calStates[id];
+  const el = document.getElementById(id);
+  if (!el || !s) return;
+  const { year, month, selected, marked, minDate } = s;
+  const first = new Date(year, month, 1).getDay();
+  const offset = first === 0 ? 6 : first - 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  let html = `<div class="mcal">
+    <div class="mcal-nav">
+      <button class="mcal-navbtn" onclick="calNav('${id}',-1)">&#8249;</button>
+      <span class="mcal-title">${MONTHS_HR[month]} ${year}</span>
+      <button class="mcal-navbtn" onclick="calNav('${id}',1)">&#8250;</button>
+    </div>
+    <div class="mcal-grid">`;
+
+  DAYS_HR.forEach(d => { html += `<div class="mcal-hd">${d}</div>`; });
+  for (let i = 0; i < offset; i++) html += '<div></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isPast = minDate ? ds < minDate : false;
+    const cls = ['mcal-day',
+      ds === todayStr ? 'is-today' : '',
+      ds === selected ? 'is-sel' : '',
+      marked.includes(ds) ? 'is-marked' : '',
+      isPast ? 'is-past' : ''
+    ].filter(Boolean).join(' ');
+    html += `<div class="${cls}" ${!isPast ? `onclick="calClick('${id}','${ds}')"` : ''}>
+      <span>${d}</span>${marked.includes(ds) ? '<i class="cal-dot"></i>' : ''}
+    </div>`;
+  }
+  html += '</div></div>';
+  el.innerHTML = html;
+}
+
+function calNav(id, dir) {
+  const s = calStates[id];
+  if (!s) return;
+  s.month += dir;
+  if (s.month > 11) { s.month = 0; s.year++; }
+  if (s.month < 0) { s.month = 11; s.year--; }
+  calRender(id);
+}
+
+function calClick(id, ds) {
+  const s = calStates[id];
+  if (!s) return;
+  s.selected = ds;
+  calRender(id);
+  if (s.onSelect) s.onSelect(ds);
+}
+
+// ============================================================
+//  BOOKING DATE/TIME PICKER
+// ============================================================
+function initBookingPicker() {
+  pickerDate = null;
+  pickerTime = null;
+  document.getElementById('bf-datetime').value = '';
+  const disp = document.getElementById('bf-dt-display');
+  if (disp) { disp.textContent = ''; disp.className = 'dt-display'; }
+  const tw = document.getElementById('booking-time-wrap');
+  if (tw) tw.style.display = 'none';
+
+  const today = new Date().toISOString().slice(0, 10);
+  calInit('booking-date-cal', {
+    minDate: today,
+    onSelect: (ds) => {
+      pickerDate = ds;
+      pickerTime = null;
+      document.getElementById('bf-datetime').value = '';
+      renderPickerSlots();
+      updateDtDisplay();
+    }
+  });
+}
+
+function renderPickerSlots() {
+  const wrap = document.getElementById('booking-time-wrap');
+  const el = document.getElementById('booking-time-slots');
+  if (!wrap || !el) return;
+  wrap.style.display = 'block';
+
+  const slots = [];
+  for (let h = 8; h <= 19; h++) {
+    slots.push(`${String(h).padStart(2,'0')}:00`);
+    slots.push(`${String(h).padStart(2,'0')}:30`);
+  }
+
+  el.innerHTML = '<div class="tslots">' +
+    slots.map(t => `<button class="tslot${t === pickerTime ? ' sel' : ''}" onclick="pickTime('${t}')">${t}</button>`).join('') +
+    '</div>';
+}
+
+function pickTime(t) {
+  pickerTime = t;
+  renderPickerSlots();
+  if (pickerDate) document.getElementById('bf-datetime').value = `${pickerDate}T${pickerTime}`;
+  updateDtDisplay();
+}
+
+function updateDtDisplay() {
+  const disp = document.getElementById('bf-dt-display');
+  if (!disp) return;
+  if (pickerDate && pickerTime) {
+    const dt = new Date(`${pickerDate}T${pickerTime}`);
+    disp.textContent = '✓ ' + dt.toLocaleString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    disp.className = 'dt-display dt-ready';
+  } else if (pickerDate) {
+    disp.textContent = 'Odaberi termin →';
+    disp.className = 'dt-display';
+  } else {
+    disp.textContent = '';
+    disp.className = 'dt-display';
+  }
 }
 
 // ============================================================
@@ -89,11 +221,9 @@ async function loadDashboard() {
   document.getElementById('stat-today').textContent = todayBookings.length;
   document.getElementById('stat-upcoming').textContent = upcoming.length;
 
-  // Klijenti count
   const allClients = await api('GET', '/api/clients');
   document.getElementById('stat-clients').textContent = allClients.length;
 
-  // Upcoming list
   const list = document.getElementById('upcoming-list');
   if (upcoming.length === 0) {
     list.innerHTML = '<div class="empty">Nema nadolazećih termina.</div>';
@@ -213,9 +343,7 @@ async function saveClient() {
     }
     closeClientModal();
     loadClients();
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 async function deleteClient(id) {
@@ -225,9 +353,7 @@ async function deleteClient(id) {
     toast('Klijent obrisan.');
     loadClients();
     closeClientDetail();
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 // ============================================================
@@ -248,14 +374,8 @@ async function loadBookingForm(prefillClientId) {
   serviceSel.innerHTML = '<option value="">— Odaberi uslugu —</option>' +
     services.map(s => `<option value="${s.id}">${s.naziv}${s.trajanje ? ' · ' + s.trajanje + ' min' : ''}</option>`).join('');
 
-  // Postavi default datum na danas, trenutno vrijeme zaokruženo na 30 min
-  const now = new Date();
-  now.setMinutes(now.getMinutes() >= 30 ? 60 : 30, 0, 0);
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-  document.getElementById('bf-datetime').value = local;
+  initBookingPicker();
   document.getElementById('bf-napomena').value = '';
-
-  // Inline novi klijent form
   document.getElementById('new-client-form').style.display = 'none';
   document.getElementById('bf-new-client-toggle').checked = false;
 }
@@ -277,16 +397,14 @@ async function submitBooking() {
     try {
       const created = await api('POST', '/api/clients', newClient);
       clientId = created.id;
-    } catch (err) {
-      toast(err.message, 'error'); return;
-    }
+    } catch (err) { toast(err.message, 'error'); return; }
   }
 
   if (!clientId) { toast('Odaberi klijenta.', 'error'); return; }
   const serviceId = document.getElementById('bf-service').value;
   if (!serviceId) { toast('Odaberi uslugu.', 'error'); return; }
   const datetimeVal = document.getElementById('bf-datetime').value;
-  if (!datetimeVal) { toast('Odaberi datum i vrijeme.', 'error'); return; }
+  if (!datetimeVal) { toast('Odaberi datum i termin.', 'error'); return; }
 
   try {
     await api('POST', '/api/bookings', {
@@ -298,17 +416,53 @@ async function submitBooking() {
     toast('Termin rezerviran! Email potvrda je poslana.');
     loadBookingForm();
     showView('bookings');
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 // ============================================================
 //  BOOKINGS LIST
 // ============================================================
+function onBookingCalSelect(ds) {
+  bookings = allBookingsCache.filter(b => b.datum_vrijeme.startsWith(ds));
+  renderBookings(bookings);
+  updateBookingsFilterLabel(ds);
+}
+
+function updateBookingsFilterLabel(ds) {
+  const label = document.getElementById('bookings-filter-label');
+  if (!label) return;
+  if (ds) {
+    const d = new Date(ds + 'T12:00:00');
+    label.textContent = d.toLocaleDateString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long' });
+  } else {
+    label.textContent = 'Svi termini';
+  }
+}
+
 async function loadBookings(dateFilter = '') {
-  const url = dateFilter ? `/api/bookings?date=${dateFilter}` : '/api/bookings';
-  bookings = await api('GET', url);
+  allBookingsCache = await api('GET', '/api/bookings');
+  const markedDates = [...new Set(allBookingsCache.map(b => b.datum_vrijeme.slice(0, 10)))];
+
+  if (!calStates['bookings-calendar']) {
+    calInit('bookings-calendar', {
+      marked: markedDates,
+      selected: dateFilter || null,
+      onSelect: onBookingCalSelect
+    });
+  } else {
+    calStates['bookings-calendar'].marked = markedDates;
+    if (dateFilter) calStates['bookings-calendar'].selected = dateFilter;
+    calRender('bookings-calendar');
+  }
+
+  const selDate = calStates['bookings-calendar']?.selected;
+  if (selDate) {
+    bookings = allBookingsCache.filter(b => b.datum_vrijeme.startsWith(selDate));
+    updateBookingsFilterLabel(selDate);
+  } else {
+    bookings = allBookingsCache;
+    updateBookingsFilterLabel('');
+  }
   renderBookings(bookings);
 }
 
@@ -339,10 +493,9 @@ async function cancelBooking(id) {
   try {
     await api('DELETE', `/api/bookings/${id}`);
     toast('Termin otkazan.');
-    loadBookings(document.getElementById('filter-date').value);
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+    const selDate = calStates['bookings-calendar']?.selected || '';
+    loadBookings(selDate);
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 // ============================================================
@@ -429,21 +582,17 @@ async function deleteService(id) {
 //  INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Topbar date
   document.getElementById('topbar-date').textContent =
     new Date().toLocaleDateString('hr-HR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // Salon naziv u topbaru
   fetch('/api/config').then(r => r.json()).then(d => {
     if (d.salonName) document.title = d.salonName + ' — Admin';
   });
 
-  // Nav (sidebar + bottom nav)
   document.querySelectorAll('[data-view]').forEach(btn => {
     btn.addEventListener('click', () => showView(btn.dataset.view));
   });
 
-  // Logout (sidebar + mobile)
   async function logout() {
     await fetch(BASE + '/auth/logout', { method: 'POST' });
     window.location.href = BASE + '/login.html';
@@ -451,17 +600,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-logout').addEventListener('click', logout);
   document.getElementById('btn-logout-mobile').addEventListener('click', logout);
 
-  // Client search
   document.getElementById('client-search').addEventListener('input', e => loadClients(e.target.value));
 
-  // Booking date filter
-  document.getElementById('filter-date').addEventListener('change', e => loadBookings(e.target.value));
   document.getElementById('btn-clear-filter').addEventListener('click', () => {
-    document.getElementById('filter-date').value = '';
-    loadBookings();
+    if (calStates['bookings-calendar']) {
+      calStates['bookings-calendar'].selected = null;
+      calRender('bookings-calendar');
+    }
+    bookings = allBookingsCache;
+    renderBookings(bookings);
+    updateBookingsFilterLabel('');
   });
 
-  // New client toggle
   document.getElementById('bf-new-client-toggle').addEventListener('change', function () {
     document.getElementById('new-client-form').style.display = this.checked ? 'block' : 'none';
     document.getElementById('bf-client').disabled = this.checked;

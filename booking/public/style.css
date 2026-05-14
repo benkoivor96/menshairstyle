@@ -439,3 +439,120 @@ tbody tr:last-child td { border-bottom: none; }
 @media (max-width: 768px) {
   .bottom-nav { display: flex; flex-direction: column; }
 }
+
+/* ---- Bookings two-column layout ---- */
+.bookings-layout {
+  display: grid;
+  grid-template-columns: 256px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.bookings-cal-side { position: sticky; top: 16px; }
+.bookings-list-side { min-width: 0; }
+#bookings-filter-label {
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ---- Mini calendar ---- */
+.mcal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  user-select: none;
+}
+.mcal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.mcal-title { font-size: 13px; font-weight: 700; color: var(--white); }
+.mcal-navbtn {
+  background: none; border: none; color: var(--gold);
+  font-size: 22px; cursor: pointer; padding: 0 6px; line-height: 1;
+  border-radius: 4px; transition: background 0.15s;
+}
+.mcal-navbtn:hover { background: rgba(194,164,126,0.12); }
+.mcal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 8px;
+}
+.mcal-hd {
+  text-align: center;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.5px; color: var(--muted);
+  padding: 4px 0 6px;
+  text-transform: uppercase;
+}
+.mcal-day {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500;
+  color: var(--text); border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.mcal-day:hover:not(.is-past) { background: rgba(194,164,126,0.12); color: var(--white); }
+.mcal-day.is-today > span { color: var(--gold); font-weight: 700; }
+.mcal-day.is-sel { background: var(--gold) !important; }
+.mcal-day.is-sel > span { color: #000 !important; font-weight: 700; }
+.mcal-day.is-past { color: rgba(255,255,255,0.2); cursor: default; }
+.cal-dot {
+  display: block; width: 4px; height: 4px;
+  border-radius: 50%; background: var(--gold);
+  position: absolute; bottom: 2px; left: 50%;
+  transform: translateX(-50%);
+}
+.mcal-day.is-sel .cal-dot { background: rgba(0,0,0,0.5); }
+
+/* ---- Date/time picker (booking form) ---- */
+.dt-picker {
+  display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;
+}
+.dt-picker > #booking-date-cal { flex-shrink: 0; }
+#booking-time-wrap { flex: 1; min-width: 200px; }
+.tslots-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+.tslots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.tslot {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 9px 4px; border-radius: 4px;
+  cursor: pointer; text-align: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.tslot:hover { border-color: var(--gold); color: var(--gold); }
+.tslot.sel { background: var(--gold); border-color: var(--gold); color: #000; }
+.dt-display {
+  margin-top: 12px; font-size: 13px;
+  color: var(--muted); font-weight: 500; min-height: 20px;
+}
+.dt-display.dt-ready { color: var(--success); }
+
+@media (max-width: 900px) {
+  .bookings-layout { grid-template-columns: 1fr; }
+  .bookings-cal-side { position: static; }
+}
+@media (max-width: 768px) {
+  .dt-picker { flex-direction: column; }
+  #booking-time-wrap { min-width: 0; width: 100%; }
+}

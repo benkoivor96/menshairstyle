@@ -155,7 +155,15 @@
 
         <div class="form-group">
           <label>Datum i vrijeme</label>
-          <input type="datetime-local" id="bf-datetime">
+          <input type="hidden" id="bf-datetime">
+          <div class="dt-picker">
+            <div id="booking-date-cal"></div>
+            <div id="booking-time-wrap" style="display:none;">
+              <div class="tslots-label">Odaberi termin</div>
+              <div id="booking-time-slots"></div>
+            </div>
+          </div>
+          <div id="bf-dt-display" class="dt-display"></div>
         </div>
 
         <div class="form-group">
@@ -196,31 +204,42 @@
 
     <!-- ========== BOOKINGS ========== -->
     <div class="view" id="view-bookings">
-      <div class="toolbar">
-        <input type="date" id="filter-date">
-        <button class="btn btn-outline btn-sm" id="btn-clear-filter">Prikaži sve</button>
-        <button class="btn" onclick="showView('booking')" style="margin-left:auto;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Novi termin
-        </button>
-      </div>
+      <div class="bookings-layout">
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Datum i vrijeme</th>
-              <th>Klijent</th>
-              <th>Usluga</th>
-              <th>Status</th>
-              <th>Napomena</th>
-              <th>Akcije</th>
-            </tr>
-          </thead>
-          <tbody id="bookings-tbody">
-            <tr><td colspan="6"><div class="empty">Učitavanje...</div></td></tr>
-          </tbody>
-        </table>
+        <!-- Lijeva kolona: kalendar -->
+        <div class="bookings-cal-side">
+          <div id="bookings-calendar"></div>
+          <button class="btn btn-outline btn-sm" id="btn-clear-filter" style="width:100%;margin-top:10px;">Prikaži sve</button>
+        </div>
+
+        <!-- Desna kolona: lista termina -->
+        <div class="bookings-list-side">
+          <div class="toolbar">
+            <span id="bookings-filter-label"></span>
+            <button class="btn" onclick="showView('booking')" style="margin-left:auto;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novi termin
+            </button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Datum i vrijeme</th>
+                  <th>Klijent</th>
+                  <th>Usluga</th>
+                  <th>Status</th>
+                  <th>Napomena</th>
+                  <th>Akcije</th>
+                </tr>
+              </thead>
+              <tbody id="bookings-tbody">
+                <tr><td colspan="6"><div class="empty">Učitavanje...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
 
