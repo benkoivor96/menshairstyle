@@ -1,210 +1,245 @@
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
-const path = require('path');
+const { Pool } = require('pg');
 
-const adapter = new FileSync(path.join(__dirname, '..', 'booking.json'));
-const db = low(adapter);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 
-// Seed default structure
-db.defaults({
-  clients: [],
-  services: [
-    { id: 1, naziv: 'Šišanje kose i frizure', trajanje: 45, cijena: null },
-    { id: 2, naziv: 'Oblikovanje Brade',       trajanje: 30, cijena: null },
-    { id: 3, naziv: 'Bojanje kose',            trajanje: 90, cijena: null },
-    { id: 4, naziv: 'Pranje Kose',             trajanje: 20, cijena: null },
-    { id: 5, naziv: 'Dječje Šišanje',          trajanje: 30, cijena: null },
-    { id: 6, naziv: 'Brijanje britvom',        trajanje: 40, cijena: null }
-  ],
-  bookings: [],
-  _seq: { clients: 1, bookings: 1 }
-}).write();
+// ============================================================
+//  INIT — kreira tablice i sida defaultne usluge
+// ============================================================
+async function init() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS clients (
+      id        SERIAL PRIMARY KEY,
+      ime       VARCHAR(100) NOT NULL,
+      prezime   VARCHAR(100) NOT NULL,
+      email     VARCHAR(200) NOT NULL,
+      telefon   VARCHAR(50),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
 
-// ---- ID helpers ----
-function nextId(collection) {
-  const id = db.get(`_seq.${collection}`).value();
-  db.set(`_seq.${collection}`, id + 1).write();
-  return id;
+    CREATE TABLE IF NOT EXISTS services (
+      id       SERIAL PRIMARY KEY,
+      naziv    VARCHAR(200) NOT NULL,
+      trajanje INTEGER,
+      cijena   NUMERIC(10,2)
+    );
+
+    CREATE TABLE IF NOT EXISTS bookings (
+      id                  SERIAL PRIMARY KEY,
+      client_id           INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+      service_id          INTEGER REFERENCES services(id),
+      datum_vrijeme       TEXT NOT NULL,
+      napomena            TEXT,
+      status              VARCHAR(20) DEFAULT 'pending',
+      email_potvrda_sent  BOOLEAN DEFAULT FALSE,
+      email_24h_sent      BOOLEAN DEFAULT FALSE,
+      email_1h_sent       BOOLEAN DEFAULT FALSE,
+      email_review_sent   BOOLEAN DEFAULT FALSE,
+      created_at          TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  const { rows } = await pool.query('SELECT COUNT(*) FROM services');
+  if (parseInt(rows[0].count) === 0) {
+    await pool.query(`
+      INSERT INTO services (naziv, trajanje) VALUES
+        ('Šišanje kose i frizure', 45),
+        ('Oblikovanje Brade',       30),
+        ('Bojanje kose',            90),
+        ('Pranje Kose',             20),
+        ('Dječje Šišanje',          30),
+        ('Brijanje britvom',        40)
+    `);
+  }
 }
 
-// ---- Clients ----
-const getClients = {
-  all: () => db.get('clients').orderBy(['prezime', 'ime'], ['asc', 'asc']).value()
-};
-
-const getClient = {
-  get: (id) => db.get('clients').find({ id: parseInt(id) }).value()
-};
-
-const insertClient = {
-  run: ({ ime, prezime, email, telefon }) => {
-    const id = nextId('clients');
-    const client = { id, ime, prezime, email, telefon: telefon || null, created_at: new Date().toISOString() };
-    db.get('clients').push(client).write();
-    return { lastInsertRowid: id };
-  }
-};
-
-const updateClient = {
-  run: ({ id, ime, prezime, email, telefon }) => {
-    db.get('clients').find({ id: parseInt(id) }).assign({ ime, prezime, email, telefon: telefon || null }).write();
-  }
-};
-
-const deleteClient = {
-  run: (id) => {
-    db.get('clients').remove({ id: parseInt(id) }).write();
-    db.get('bookings').remove({ client_id: parseInt(id) }).write();
-  }
-};
-
-// ---- Services ----
-const getServices = {
-  all: () => db.get('services').sortBy('naziv').value()
-};
-
-const getService = {
-  get: (id) => db.get('services').find({ id: parseInt(id) }).value()
-};
-
-const insertService = {
-  run: ({ naziv, trajanje, cijena }) => {
-    const allIds = db.get('services').map('id').value();
-    const id = allIds.length ? Math.max(...allIds) + 1 : 1;
-    db.get('services').push({ id, naziv, trajanje: trajanje || null, cijena: cijena || null }).write();
-    return { lastInsertRowid: id };
-  }
-};
-
-const updateService = {
-  run: ({ id, naziv, trajanje, cijena }) => {
-    db.get('services').find({ id: parseInt(id) }).assign({ naziv, trajanje: trajanje || null, cijena: cijena || null }).write();
-  }
-};
-
-const deleteService = {
-  run: (id) => db.get('services').remove({ id: parseInt(id) }).write()
-};
-
-// ---- Bookings helpers ----
-function enrichBooking(b) {
-  if (!b) return null;
-  const client = db.get('clients').find({ id: b.client_id }).value() || {};
-  const service = db.get('services').find({ id: b.service_id }).value() || {};
-  return { ...b, ime: client.ime, prezime: client.prezime, email: client.email, telefon: client.telefon, usluga: service.naziv };
+// ============================================================
+//  CLIENTS
+// ============================================================
+async function getClients() {
+  const { rows } = await pool.query(
+    'SELECT * FROM clients ORDER BY prezime ASC, ime ASC'
+  );
+  return rows;
 }
 
-const getBookings = {
-  all: () => db.get('bookings').orderBy('datum_vrijeme', 'desc').value().map(enrichBooking)
-};
-
-const getBookingsByDate = {
-  all: (date) => db.get('bookings')
-    .filter(b => b.datum_vrijeme && b.datum_vrijeme.startsWith(date))
-    .sortBy('datum_vrijeme').value().map(enrichBooking)
-};
-
-const getBookingsByClientId = {
-  all: (clientId) => db.get('bookings')
-    .filter({ client_id: parseInt(clientId) })
-    .orderBy('datum_vrijeme', 'desc').value().map(b => {
-      const service = db.get('services').find({ id: b.service_id }).value() || {};
-      return { ...b, usluga: service.naziv };
-    })
-};
-
-const getBooking = {
-  get: (id) => enrichBooking(db.get('bookings').find({ id: parseInt(id) }).value())
-};
-
-const insertBooking = {
-  run: ({ client_id, service_id, datum_vrijeme, napomena }) => {
-    const id = nextId('bookings');
-    const booking = {
-      id, client_id: parseInt(client_id), service_id: parseInt(service_id),
-      datum_vrijeme, napomena: napomena || null,
-      status: 'pending',
-      email_potvrda_sent: 0, email_24h_sent: 0, email_1h_sent: 0, email_review_sent: 0,
-      created_at: new Date().toISOString()
-    };
-    db.get('bookings').push(booking).write();
-    return { lastInsertRowid: id };
-  }
-};
-
-const updateBooking = {
-  run: ({ id, client_id, service_id, datum_vrijeme, napomena, status }) => {
-    db.get('bookings').find({ id: parseInt(id) }).assign({
-      client_id: parseInt(client_id), service_id: parseInt(service_id),
-      datum_vrijeme, napomena: napomena || null, status: status || 'pending'
-    }).write();
-  }
-};
-
-const cancelBooking = {
-  run: (id) => db.get('bookings').find({ id: parseInt(id) }).assign({ status: 'cancelled' }).write()
-};
-
-function markEmailSent(field, id) {
-  db.get('bookings').find({ id: parseInt(id) }).assign({ [field]: 1 }).write();
+async function getClient(id) {
+  const { rows } = await pool.query('SELECT * FROM clients WHERE id=$1', [id]);
+  return rows[0] || null;
 }
 
-// ---- Scheduler queries ----
-function getPendingReminders(minHours, maxHours) {
+async function insertClient({ ime, prezime, email, telefon }) {
+  const { rows } = await pool.query(
+    'INSERT INTO clients (ime, prezime, email, telefon) VALUES ($1,$2,$3,$4) RETURNING *',
+    [ime, prezime, email, telefon || null]
+  );
+  return rows[0];
+}
+
+async function updateClient({ id, ime, prezime, email, telefon }) {
+  const { rows } = await pool.query(
+    'UPDATE clients SET ime=$1, prezime=$2, email=$3, telefon=$4 WHERE id=$5 RETURNING *',
+    [ime, prezime, email, telefon || null, id]
+  );
+  return rows[0];
+}
+
+async function deleteClient(id) {
+  await pool.query('DELETE FROM clients WHERE id=$1', [id]);
+}
+
+// ============================================================
+//  SERVICES
+// ============================================================
+async function getServices() {
+  const { rows } = await pool.query('SELECT * FROM services ORDER BY naziv ASC');
+  return rows;
+}
+
+async function getService(id) {
+  const { rows } = await pool.query('SELECT * FROM services WHERE id=$1', [id]);
+  return rows[0] || null;
+}
+
+async function insertService({ naziv, trajanje, cijena }) {
+  const { rows } = await pool.query(
+    'INSERT INTO services (naziv, trajanje, cijena) VALUES ($1,$2,$3) RETURNING *',
+    [naziv, trajanje || null, cijena || null]
+  );
+  return rows[0];
+}
+
+async function updateService({ id, naziv, trajanje, cijena }) {
+  const { rows } = await pool.query(
+    'UPDATE services SET naziv=$1, trajanje=$2, cijena=$3 WHERE id=$4 RETURNING *',
+    [naziv, trajanje || null, cijena || null, id]
+  );
+  return rows[0];
+}
+
+async function deleteService(id) {
+  await pool.query('DELETE FROM services WHERE id=$1', [id]);
+}
+
+// ============================================================
+//  BOOKINGS
+// ============================================================
+const ENRICH = `
+  SELECT b.*, c.ime, c.prezime, c.email, c.telefon, s.naziv AS usluga
+  FROM bookings b
+  LEFT JOIN clients c ON b.client_id = c.id
+  LEFT JOIN services s ON b.service_id = s.id
+`;
+
+async function getBookings() {
+  const { rows } = await pool.query(ENRICH + ' ORDER BY b.datum_vrijeme DESC');
+  return rows;
+}
+
+async function getBookingsByDate(date) {
+  const { rows } = await pool.query(
+    ENRICH + " WHERE b.datum_vrijeme LIKE $1 ORDER BY b.datum_vrijeme ASC",
+    [date + '%']
+  );
+  return rows;
+}
+
+async function getBookingsByClientId(clientId) {
+  const { rows } = await pool.query(
+    ENRICH + ' WHERE b.client_id=$1 ORDER BY b.datum_vrijeme DESC',
+    [clientId]
+  );
+  return rows;
+}
+
+async function getBooking(id) {
+  const { rows } = await pool.query(ENRICH + ' WHERE b.id=$1', [id]);
+  return rows[0] || null;
+}
+
+async function insertBooking({ client_id, service_id, datum_vrijeme, napomena }) {
+  const { rows } = await pool.query(
+    'INSERT INTO bookings (client_id, service_id, datum_vrijeme, napomena) VALUES ($1,$2,$3,$4) RETURNING id',
+    [client_id, service_id, datum_vrijeme, napomena || null]
+  );
+  return getBooking(rows[0].id);
+}
+
+async function updateBooking({ id, client_id, service_id, datum_vrijeme, napomena, status }) {
+  await pool.query(
+    'UPDATE bookings SET client_id=$1, service_id=$2, datum_vrijeme=$3, napomena=$4, status=$5 WHERE id=$6',
+    [client_id, service_id, datum_vrijeme, napomena || null, status || 'pending', id]
+  );
+  return getBooking(id);
+}
+
+async function cancelBooking(id) {
+  await pool.query("UPDATE bookings SET status='cancelled' WHERE id=$1", [id]);
+}
+
+async function markEmailSent(field, id) {
+  await pool.query(`UPDATE bookings SET ${field}=TRUE WHERE id=$1`, [id]);
+}
+
+// ============================================================
+//  SCHEDULER QUERIES — filtriranje u JS zbog TEXT datuma
+// ============================================================
+async function _getPendingBookings() {
+  const { rows } = await pool.query(ENRICH + " WHERE b.status='pending'");
+  return rows;
+}
+
+async function getPending24h() {
+  const all = await _getPendingBookings();
   const now = Date.now();
-  return db.get('bookings').filter(b => {
-    if (b.status !== 'pending') return false;
-    const dt = new Date(b.datum_vrijeme).getTime();
-    const diffH = (dt - now) / 36e5;
-    return diffH >= minHours && diffH <= maxHours;
-  }).value().map(enrichBooking);
+  return all.filter(b => {
+    if (b.email_24h_sent) return false;
+    const diff = (new Date(b.datum_vrijeme).getTime() - now) / 36e5;
+    return diff >= 23 && diff <= 25;
+  });
 }
 
-const getPending24h = {
-  all: () => {
-    const res = getPendingReminders(23, 25);
-    return res.filter(b => b && !b.email_24h_sent);
-  }
-};
+async function getPending1h() {
+  const all = await _getPendingBookings();
+  const now = Date.now();
+  return all.filter(b => {
+    if (b.email_1h_sent) return false;
+    const diff = (new Date(b.datum_vrijeme).getTime() - now) / 36e5;
+    return diff >= (55/60) && diff <= (65/60);
+  });
+}
 
-const getPending1h = {
-  all: () => {
-    const mins55 = 55 / 60;
-    const mins65 = 65 / 60;
-    const res = getPendingReminders(mins55, mins65);
-    return res.filter(b => b && !b.email_1h_sent);
-  }
-};
+async function getPendingReview() {
+  const all = await _getPendingBookings();
+  const now = Date.now();
+  return all.filter(b => {
+    if (b.email_review_sent) return false;
+    return (now - new Date(b.datum_vrijeme).getTime()) >= 30 * 60 * 1000;
+  });
+}
 
-const getPendingReview = {
-  all: () => {
-    const now = Date.now();
-    return db.get('bookings').filter(b => {
-      if (b.status !== 'pending' || b.email_review_sent) return false;
-      const dt = new Date(b.datum_vrijeme).getTime();
-      return (now - dt) >= 30 * 60 * 1000; // 30 min prošlo
-    }).value().map(enrichBooking);
-  }
-};
+async function completeBooking(id) {
+  await pool.query(
+    "UPDATE bookings SET status='completed', email_review_sent=TRUE WHERE id=$1", [id]
+  );
+}
 
-const completeBooking = {
-  run: (id) => db.get('bookings').find({ id: parseInt(id) }).assign({ status: 'completed', email_review_sent: 1 }).write()
-};
-
-const getUpcoming = {
-  all: () => {
-    const now = new Date();
-    const in7days = new Date(Date.now() + 7 * 24 * 36e5);
-    return db.get('bookings').filter(b => {
-      if (b.status !== 'pending') return false;
-      const dt = new Date(b.datum_vrijeme);
-      return dt >= now && dt <= in7days;
-    }).sortBy('datum_vrijeme').value().map(enrichBooking);
-  }
-};
+async function getUpcoming() {
+  const all = await _getPendingBookings();
+  const now = Date.now();
+  const in7 = now + 7 * 24 * 36e5;
+  return all
+    .filter(b => {
+      const t = new Date(b.datum_vrijeme).getTime();
+      return t >= now && t <= in7;
+    })
+    .sort((a, b) => new Date(a.datum_vrijeme) - new Date(b.datum_vrijeme));
+}
 
 module.exports = {
-  db,
+  init, pool,
   getClients, getClient, insertClient, updateClient, deleteClient,
   getServices, getService, insertService, updateService, deleteService,
   getBookings, getBookingsByDate, getBookingsByClientId, getBooking,

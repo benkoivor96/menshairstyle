@@ -8,11 +8,11 @@ function log(msg) {
 
 async function runReminders() {
   // 24h reminder
-  const upcoming24h = db.getPending24h.all();
+  const upcoming24h = await db.getPending24h();
   for (const booking of upcoming24h) {
     try {
       await email.send24hReminder(booking);
-      db.markEmailSent('email_24h_sent', booking.id);
+      await db.markEmailSent('email_24h_sent', booking.id);
       log(`24h reminder poslan za booking #${booking.id} (${booking.ime} ${booking.prezime})`);
     } catch (err) {
       log(`GREŠKA 24h reminder booking #${booking.id}: ${err.message}`);
@@ -20,11 +20,11 @@ async function runReminders() {
   }
 
   // 1h reminder
-  const upcoming1h = db.getPending1h.all();
+  const upcoming1h = await db.getPending1h();
   for (const booking of upcoming1h) {
     try {
       await email.send1hReminder(booking);
-      db.markEmailSent('email_1h_sent', booking.id);
+      await db.markEmailSent('email_1h_sent', booking.id);
       log(`1h reminder poslan za booking #${booking.id} (${booking.ime} ${booking.prezime})`);
     } catch (err) {
       log(`GREŠKA 1h reminder booking #${booking.id}: ${err.message}`);
@@ -32,11 +32,11 @@ async function runReminders() {
   }
 
   // Review request (termin je prošao 30+ minuta)
-  const pastBookings = db.getPendingReview.all();
+  const pastBookings = await db.getPendingReview();
   for (const booking of pastBookings) {
     try {
       await email.sendReviewRequest(booking);
-      db.completeBooking.run(booking.id);
+      await db.completeBooking(booking.id);
       log(`Review request poslan za booking #${booking.id} (${booking.ime} ${booking.prezime})`);
     } catch (err) {
       log(`GREŠKA review request booking #${booking.id}: ${err.message}`);
@@ -45,7 +45,6 @@ async function runReminders() {
 }
 
 function startScheduler() {
-  // Svake 5 minuta
   cron.schedule('*/5 * * * *', async () => {
     try {
       await runReminders();
