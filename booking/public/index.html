@@ -23,7 +23,7 @@
       Klijenti
     </button>
     <button class="nav-item" data-view="booking">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Novi termin
     </button>
     <button class="nav-item" data-view="bookings">
@@ -33,6 +33,10 @@
     <button class="nav-item" data-view="services">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
       Usluge
+    </button>
+    <button class="nav-item" data-view="blocks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Blokade
     </button>
   </nav>
   <div style="padding:16px 20px;border-top:1px solid rgba(194,164,126,0.15);">
@@ -207,6 +211,73 @@
       </div>
     </div>
 
+    <!-- ========== BLOCKS ========== -->
+    <div class="view" id="view-blocks">
+      <div class="bookings-layout">
+
+        <!-- Lijeva kolona: kalendar -->
+        <div class="bookings-cal-side">
+          <div id="blocks-date-cal"></div>
+          <div id="blocks-cal-legend" style="margin-top:10px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:4px;">
+            <span><i class="blk-dot-example"></i> Blokirano</span>
+          </div>
+        </div>
+
+        <!-- Desna kolona: forma + lista -->
+        <div class="bookings-list-side">
+
+          <!-- Forma -->
+          <div class="section-heading" id="blk-form-heading">Nova blokada</div>
+          <div id="blk-form" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:24px;">
+            <div class="form-group" style="margin-bottom:14px;">
+              <label>Datum</label>
+              <div id="blk-selected-date" style="color:var(--gold);font-weight:600;font-size:14px;">← klikni na datum u kalendaru</div>
+              <input type="hidden" id="blk-datum">
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label>Vrsta blokade</label>
+              <div style="display:flex;gap:20px;margin-top:6px;">
+                <label style="display:flex;align-items:center;gap:7px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;">
+                  <input type="radio" name="blk-type" value="cijeli_dan" id="blk-cijeli" checked style="accent-color:var(--gold);width:auto;">
+                  Cijeli dan
+                </label>
+                <label style="display:flex;align-items:center;gap:7px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;">
+                  <input type="radio" name="blk-type" value="sati" id="blk-sati-radio" style="accent-color:var(--gold);width:auto;">
+                  Određeni sati
+                </label>
+              </div>
+            </div>
+
+            <div id="blk-time-range" style="display:none;">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Od</label>
+                  <input type="time" id="blk-od" value="08:00">
+                </div>
+                <div class="form-group">
+                  <label>Do</label>
+                  <input type="time" id="blk-do" value="12:00">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:16px;">
+              <label>Razlog (opcionalno)</label>
+              <input type="text" id="blk-razlog" placeholder="npr. Godišnji odmor, bolovanje...">
+            </div>
+
+            <button class="btn" onclick="saveBlock()">Blokiraj</button>
+          </div>
+
+          <!-- Lista -->
+          <div class="section-heading">Postojeće blokade</div>
+          <div id="blocks-list"><div class="empty">Nema blokada.</div></div>
+
+        </div>
+      </div>
+    </div>
+
     <!-- ========== BOOKINGS ========== -->
     <div class="view" id="view-bookings">
       <div class="bookings-layout">
@@ -219,12 +290,13 @@
 
         <!-- Desna kolona: lista termina -->
         <div class="bookings-list-side">
-          <div class="toolbar">
-            <span id="bookings-filter-label"></span>
-            <button class="btn" onclick="showView('booking')" style="margin-left:auto;">
+          <div class="toolbar bookings-toolbar">
+            <button class="btn" onclick="openQuickBooking()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Novi termin
             </button>
+            <span id="bookings-filter-label"></span>
+            <button class="btn-block-link" onclick="openQuickBlock()">Blokiraj</button>
           </div>
           <div class="table-wrap">
             <table>
@@ -320,6 +392,98 @@
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeServiceModal()">Odustani</button>
       <button class="btn btn-sm" onclick="saveService()">Spremi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Booking Modal -->
+<div class="modal-overlay" id="qb-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <h3>Novi termin</h3>
+        <div id="qb-modal-date" style="font-size:13px;color:var(--gold);font-weight:500;margin-top:2px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeQuickBooking()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="qb-layout">
+        <div class="qb-cal-side">
+          <div id="qb-date-cal"></div>
+        </div>
+        <div class="qb-form-side">
+          <div class="form-group">
+            <label>Klijent</label>
+            <div class="client-search-wrap">
+              <input type="text" id="qb-client-search" placeholder="Pretraži po imenu..." autocomplete="off">
+              <input type="hidden" id="qb-client">
+              <div id="qb-client-dropdown" class="client-dropdown"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Usluga</label>
+            <select id="qb-service"></select>
+          </div>
+          <div class="form-group">
+            <label>Termin</label>
+            <input type="hidden" id="qb-datetime">
+            <div id="qb-time-slots"></div>
+            <div id="qb-dt-display" class="dt-display"></div>
+          </div>
+          <div class="form-group">
+            <label>Napomena (opcionalno)</label>
+            <textarea id="qb-napomena" placeholder="Posebni zahtjevi..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeQuickBooking()">Odustani</button>
+      <button class="btn btn-sm" onclick="submitQuickBooking()">Rezerviraj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Block Modal -->
+<div class="modal-overlay" id="qb-block-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Blokada dana</h3>
+      <button class="modal-close" onclick="closeQuickBlock()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Datum</label>
+        <div id="qb-blk-date-display" style="color:var(--gold);font-weight:600;font-size:14px;margin-top:4px;"></div>
+        <input type="hidden" id="qb-blk-datum">
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Vrsta blokade</label>
+        <div style="display:flex;gap:20px;margin-top:8px;">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;">
+            <input type="radio" name="qb-blk-type" id="qb-blk-cijeli" checked style="accent-color:var(--gold);width:auto;">
+            Cijeli dan
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;">
+            <input type="radio" name="qb-blk-type" id="qb-blk-sati" style="accent-color:var(--gold);width:auto;">
+            Određeni sati
+          </label>
+        </div>
+      </div>
+      <div id="qb-blk-time-range" style="display:none;">
+        <div class="form-row">
+          <div class="form-group"><label>Od</label><input type="time" id="qb-blk-od" value="08:00"></div>
+          <div class="form-group"><label>Do</label><input type="time" id="qb-blk-do" value="12:00"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Razlog (opcionalno)</label>
+        <input type="text" id="qb-blk-razlog" placeholder="npr. Godišnji odmor...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeQuickBlock()">Odustani</button>
+      <button class="btn btn-sm btn-danger" onclick="submitQuickBlock()">Blokiraj</button>
     </div>
   </div>
 </div>

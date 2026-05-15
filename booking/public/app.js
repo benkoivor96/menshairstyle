@@ -10,12 +10,14 @@ let clients = [];
 let services = [];
 let bookings = [];
 let allBookingsCache = [];
+let allBlocksCache = [];
 let editingClientId = null;
 let editingBookingId = null;
 let pickerDate = null;
 let pickerTime = null;
 let blockedSlotsCache = null;
 let blockedSlotsCacheDate = null;
+let pickerDayFullyBlocked = false;
 let detailClientId = null;
 let pendingPrefillClientId = null;
 const calStates = {};
@@ -23,6 +25,24 @@ const calStates = {};
 // ============================================================
 //  UTILS
 // ============================================================
+// Sigurno parsiranje DATE iz baze (izbjegava timezone pomak)
+function parseDatum(datum) {
+  if (!datum) return '';
+  // Čisti "YYYY-MM-DD" string — vrati direktno, nema konverzije
+  const str = String(datum);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  // Date objekt ili ISO string s vremenom — koristi LOKALNE metode
+  const d = datum instanceof Date ? datum : new Date(str);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function datumToLocal(datum) {
+  const [y, m, d] = parseDatum(datum).split('-').map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0); // lokalno podne, bez UTC pomaka
+}
+
 function fmt(dtStr) {
   if (!dtStr) return '—';
   const d = new Date(dtStr);
@@ -68,9 +88,9 @@ async function api(method, url, body) {
 const MONTHS_HR = ['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'];
 const DAYS_HR = ['Pon','Uto','Sri','Čet','Pet','Sub','Ned'];
 
-function calInit(id, { selected = null, marked = [], minDate = null, onSelect } = {}) {
+function calInit(id, { selected = null, marked = [], blockedDays = [], partialBlockedDays = [], minDate = null, disableBlocked = false, onSelect } = {}) {
   const d = selected ? new Date(selected + 'T12:00:00') : new Date();
-  calStates[id] = { year: d.getFullYear(), month: d.getMonth(), selected, marked, minDate, onSelect };
+  calStates[id] = { year: d.getFullYear(), month: d.getMonth(), selected, marked, blockedDays, partialBlockedDays, minDate, disableBlocked, onSelect };
   calRender(id);
 }
 
@@ -79,6 +99,8 @@ function calRender(id) {
   const el = document.getElementById(id);
   if (!el || !s) return;
   const { year, month, selected, marked, minDate } = s;
+  const blockedDays = s.blockedDays || [];
+  const partialBlockedDays = s.partialBlockedDays || [];
   const first = new Date(year, month, 1).getDay();
   const offset = first === 0 ? 6 : first - 1;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -98,14 +120,22 @@ function calRender(id) {
   for (let d = 1; d <= daysInMonth; d++) {
     const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isPast = minDate ? ds < minDate : false;
+    const isBlocked = blockedDays.includes(ds);
+    const isPartial = !isBlocked && partialBlockedDays.includes(ds);
+    const isDisabled = isPast || (isBlocked && s.disableBlocked);
     const cls = ['mcal-day',
       ds === todayStr ? 'is-today' : '',
       ds === selected ? 'is-sel' : '',
       marked.includes(ds) ? 'is-marked' : '',
+      isBlocked ? (s.disableBlocked ? 'is-blocked-grey' : 'is-blocked') : '',
+      isPartial ? 'is-partial-blocked' : '',
       isPast ? 'is-past' : ''
     ].filter(Boolean).join(' ');
-    html += `<div class="${cls}" ${!isPast ? `onclick="calClick('${id}','${ds}')"` : ''}>
-      <span>${d}</span>${marked.includes(ds) ? '<i class="cal-dot"></i>' : ''}
+    html += `<div class="${cls}" ${!isDisabled ? `onclick="calClick('${id}','${ds}')"` : ''}>
+      <span>${d}</span>
+      ${marked.includes(ds) ? '<i class="cal-dot"></i>' : ''}
+      ${isBlocked && !s.disableBlocked ? '<i class="cal-blk"></i>' : ''}
+      ${isPartial ? '<i class="cal-blk"></i>' : ''}
     </div>`;
   }
   html += '</div></div>';
@@ -132,7 +162,7 @@ function calClick(id, ds) {
 // ============================================================
 //  BOOKING DATE/TIME PICKER
 // ============================================================
-function initBookingPicker() {
+function initBookingPicker(blockedPeriods = []) {
   pickerDate = null;
   pickerTime = null;
   blockedSlotsCache = null;
@@ -143,9 +173,18 @@ function initBookingPicker() {
   const tw = document.getElementById('booking-time-wrap');
   if (tw) tw.style.display = 'none';
 
+  const fullBlockedDays = [...new Set(
+    blockedPeriods.filter(bp => bp.cijeli_dan).map(bp => parseDatum(bp.datum))
+  )];
+  const partialBlockedDays = [...new Set(
+    blockedPeriods.filter(bp => !bp.cijeli_dan).map(bp => parseDatum(bp.datum))
+  )];
+
   const today = new Date().toISOString().slice(0, 10);
   calInit('booking-date-cal', {
     minDate: today,
+    blockedDays: fullBlockedDays,
+    disableBlocked: true,
     onSelect: async (ds) => {
       pickerDate = ds;
       pickerTime = null;
@@ -160,8 +199,42 @@ function initBookingPicker() {
 
 async function getBlockedSlots(date) {
   if (blockedSlotsCacheDate === date && blockedSlotsCache !== null) return blockedSlotsCache;
-  const dayBookings = await api('GET', `/api/bookings?date=${date}`);
+
+  const [dayBookings, blockedPeriods] = await Promise.all([
+    api('GET', `/api/bookings?date=${date}`),
+    api('GET', `/api/blocked-periods?date=${date}`)
+  ]);
+
   const blocked = new Set();
+  pickerDayFullyBlocked = false;
+
+  // Provjeri cijeli dan
+  const fullDayBlock = blockedPeriods.find(bp => bp.cijeli_dan);
+  if (fullDayBlock) {
+    pickerDayFullyBlocked = true;
+    for (let h = 8; h <= 19; h++) {
+      blocked.add(`${String(h).padStart(2,'0')}:00`);
+      blocked.add(`${String(h).padStart(2,'0')}:30`);
+    }
+    blockedSlotsCacheDate = date;
+    blockedSlotsCache = blocked;
+    return blocked;
+  }
+
+  // Parcijalne blokade (određeni sati)
+  for (const bp of blockedPeriods) {
+    if (bp.od && bp.do) {
+      const [oh, om] = bp.od.slice(0, 5).split(':').map(Number);
+      const [dh, dm] = bp.do.slice(0, 5).split(':').map(Number);
+      const startMin = oh * 60 + om;
+      const endMin = dh * 60 + dm;
+      for (let min = startMin; min < endMin; min += 30) {
+        blocked.add(`${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`);
+      }
+    }
+  }
+
+  // Postojeće rezervacije
   for (const b of dayBookings) {
     if (b.status === 'cancelled') continue;
     const timeStr = b.datum_vrijeme.slice(11, 16);
@@ -173,6 +246,7 @@ async function getBlockedSlots(date) {
       blocked.add(`${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`);
     }
   }
+
   blockedSlotsCacheDate = date;
   blockedSlotsCache = blocked;
   return blocked;
@@ -208,6 +282,16 @@ async function renderPickerSlots() {
   }
 
   const blocked = pickerDate ? await getBlockedSlots(pickerDate) : new Set();
+
+  // Cijeli dan blokiran
+  if (pickerDayFullyBlocked) {
+    pickerTime = null;
+    document.getElementById('bf-datetime').value = '';
+    updateDtDisplay();
+    el.innerHTML = '<div class="day-blocked-msg">🚫 Ovaj dan je blokiran</div>';
+    return;
+  }
+
   const duration = getSelectedServiceDuration();
 
   // If currently selected time is now blocked, deselect it
@@ -258,13 +342,14 @@ function showView(id) {
   document.getElementById(`view-${id}`).classList.add('active');
   document.querySelectorAll(`[data-view="${id}"]`).forEach(el => el.classList.add('active'));
   document.getElementById('topbar-title').textContent =
-    { dashboard: 'Dashboard', clients: 'Klijenti', booking: 'Novi termin', bookings: 'Termini', services: 'Usluge' }[id];
+    { dashboard: 'Dashboard', clients: 'Klijenti', booking: 'Novi termin', bookings: 'Termini', services: 'Usluge', blocks: 'Blokade' }[id];
 
   if (id === 'dashboard') loadDashboard();
   if (id === 'clients') loadClients();
   if (id === 'booking') loadBookingForm();
   if (id === 'bookings') loadBookings();
   if (id === 'services') loadServices();
+  if (id === 'blocks') loadBlocks();
 }
 
 // ============================================================
@@ -428,10 +513,13 @@ async function loadBookingForm(prefillClientId) {
   const clientToFill = prefillClientId || pendingPrefillClientId;
   pendingPrefillClientId = null;
 
-  [clients, services] = await Promise.all([
+  const [clientsData, servicesData, blockedPeriods] = await Promise.all([
     api('GET', '/api/clients'),
-    api('GET', '/api/services')
+    api('GET', '/api/services'),
+    api('GET', '/api/blocked-periods')
   ]);
+  clients = clientsData;
+  services = servicesData;
 
   // Client search init
   document.getElementById('bf-client').value = '';
@@ -457,7 +545,7 @@ async function loadBookingForm(prefillClientId) {
     }
   };
 
-  initBookingPicker();
+  initBookingPicker(blockedPeriods);
   document.getElementById('bf-napomena').value = '';
   document.getElementById('new-client-form').style.display = 'none';
   document.getElementById('bf-new-client-toggle').checked = false;
@@ -544,7 +632,8 @@ async function submitBooking() {
 // ============================================================
 function onBookingCalSelect(ds) {
   bookings = allBookingsCache.filter(b => b.datum_vrijeme.startsWith(ds));
-  renderBookings(bookings);
+  const blocks = allBlocksCache.filter(b => parseDatum(b.datum) === ds);
+  renderBookings(bookings, blocks);
   updateBookingsFilterLabel(ds);
 }
 
@@ -560,17 +649,28 @@ function updateBookingsFilterLabel(ds) {
 }
 
 async function loadBookings(dateFilter = '') {
-  allBookingsCache = await api('GET', '/api/bookings');
+  const [allB, allBlocks] = await Promise.all([
+    api('GET', '/api/bookings'),
+    api('GET', '/api/blocked-periods')
+  ]);
+  allBookingsCache = allB;
+  allBlocksCache = allBlocks;
   const markedDates = [...new Set(allBookingsCache.map(b => b.datum_vrijeme.slice(0, 10)))];
+  const fullBlockedDays = [...new Set(allBlocks.filter(b => b.cijeli_dan).map(b => parseDatum(b.datum)))];
+  const partialBlockedDays = [...new Set(allBlocks.filter(b => !b.cijeli_dan).map(b => parseDatum(b.datum)))];
 
   if (!calStates['bookings-calendar']) {
     calInit('bookings-calendar', {
       marked: markedDates,
+      blockedDays: fullBlockedDays,
+      partialBlockedDays,
       selected: dateFilter || null,
       onSelect: onBookingCalSelect
     });
   } else {
     calStates['bookings-calendar'].marked = markedDates;
+    calStates['bookings-calendar'].blockedDays = fullBlockedDays;
+    calStates['bookings-calendar'].partialBlockedDays = partialBlockedDays;
     if (dateFilter) calStates['bookings-calendar'].selected = dateFilter;
     calRender('bookings-calendar');
   }
@@ -578,22 +678,49 @@ async function loadBookings(dateFilter = '') {
   const selDate = calStates['bookings-calendar']?.selected;
   if (selDate) {
     bookings = allBookingsCache.filter(b => b.datum_vrijeme.startsWith(selDate));
+    const blocks = allBlocksCache.filter(b => parseDatum(b.datum) === selDate);
     updateBookingsFilterLabel(selDate);
+    renderBookings(bookings, blocks);
   } else {
     bookings = allBookingsCache;
     updateBookingsFilterLabel('');
+    renderBookings(bookings, allBlocksCache);
   }
-  renderBookings(bookings);
 }
 
-function renderBookings(list) {
+function renderBookings(list, blocks = []) {
   const tbody = document.getElementById('bookings-tbody');
-  if (list.length === 0) {
+
+  // Spoji termine i blokade, sortiraj po datumu/vremenu
+  const combined = [
+    ...list.map(b => ({ type: 'booking', sortKey: b.datum_vrijeme, data: b })),
+    ...blocks.map(b => ({
+      type: 'block', data: b,
+      sortKey: parseDatum(b.datum) + 'T' + (b.od ? b.od.slice(0, 5) : '00:00')
+    }))
+  ].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+  if (combined.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6"><div class="empty">Nema termina.</div></td></tr>`;
     return;
   }
-  tbody.innerHTML = list.map(b => `
-    <tr>
+
+  tbody.innerHTML = combined.map(item => {
+    if (item.type === 'block') {
+      const b = item.data;
+      const dateStr = datumToLocal(b.datum).toLocaleDateString('hr-HR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const timeStr = b.cijeli_dan ? 'Cijeli dan' : `${b.od ? b.od.slice(0,5) : '?'} – ${b.do ? b.do.slice(0,5) : '?'}`;
+      return `<tr style="opacity:0.75;">
+        <td style="color:var(--danger)">🔒 ${dateStr}</td>
+        <td style="color:var(--muted)">—</td>
+        <td style="color:var(--danger);font-weight:600;">${timeStr}</td>
+        <td><span class="badge" style="background:rgba(224,90,90,0.15);color:var(--danger);border-radius:4px;padding:3px 8px;font-size:11px;font-weight:700;">BLOKADA</span></td>
+        <td style="color:var(--muted)">${b.razlog || '—'}</td>
+        <td><button class="btn btn-sm btn-outline" onclick="removeBlockFromBookings(${b.id})">Ukloni</button></td>
+      </tr>`;
+    }
+    const b = item.data;
+    return `<tr>
       <td>${fmt(b.datum_vrijeme)}</td>
       <td><strong style="color:#fff">${b.ime} ${b.prezime}</strong></td>
       <td>${b.usluga}</td>
@@ -601,11 +728,21 @@ function renderBookings(list) {
       <td>${b.napomena || '—'}</td>
       <td>
         <div style="display:flex;gap:6px;">
-          ${b.status === 'pending' ? `<button class="btn btn-sm btn-danger" onclick="cancelBooking(${b.id})">Otkaži</button>` : ''}
+          ${b.status === 'pending' ? `<button class="btn btn-sm btn-danger" onclick="cancelBooking(${b.id})">Otkaži</button>` : `<button class="btn btn-sm btn-outline" onclick="cancelBooking(${b.id})">Briši</button>`}
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
+}
+
+async function removeBlockFromBookings(id) {
+  if (!confirm('Ukloniti ovu blokadu?')) return;
+  try {
+    await api('DELETE', `/api/blocked-periods/${id}`);
+    toast('Blokada uklonjena.');
+    blockedSlotsCache = null; blockedSlotsCacheDate = null;
+    loadBookings(calStates['bookings-calendar']?.selected || '');
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 async function cancelBooking(id) {
@@ -699,6 +836,343 @@ async function deleteService(id) {
 }
 
 // ============================================================
+//  QUICK BOOKING MODAL (u Termini tabu)
+// ============================================================
+let qbDate = null;
+let qbTime = null;
+let qbBlockedSlotsCache = null;
+let qbBlockedSlotsCacheDate = null;
+let qbDayFullyBlocked = false;
+
+async function openQuickBooking() {
+  qbDate = calStates['bookings-calendar']?.selected || new Date().toISOString().slice(0, 10);
+  qbTime = null;
+  qbBlockedSlotsCache = null;
+  qbBlockedSlotsCacheDate = null;
+  qbDayFullyBlocked = false;
+
+  const [clientsData, servicesData, blockedPeriods] = await Promise.all([
+    api('GET', '/api/clients'),
+    api('GET', '/api/services'),
+    api('GET', '/api/blocked-periods')
+  ]);
+  clients = clientsData;
+  services = servicesData;
+
+  const d = new Date(qbDate + 'T12:00:00');
+  document.getElementById('qb-modal-date').textContent =
+    d.toLocaleDateString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const svc = document.getElementById('qb-service');
+  svc.innerHTML = '<option value="">— Odaberi uslugu —</option>' +
+    services.map(s => `<option value="${s.id}">${s.naziv}${s.trajanje ? ' · ' + s.trajanje + ' min' : ''}</option>`).join('');
+  svc.onchange = async () => { qbBlockedSlotsCache = null; await renderQbSlots(); };
+
+  document.getElementById('qb-client-search').value = '';
+  document.getElementById('qb-client').value = '';
+  document.getElementById('qb-napomena').value = '';
+  document.getElementById('qb-datetime').value = '';
+
+  const qbFullBlockedDays = [...new Set(blockedPeriods.filter(b => b.cijeli_dan).map(b => parseDatum(b.datum)))];
+  const today = new Date().toISOString().slice(0, 10);
+  calInit('qb-date-cal', {
+    selected: qbDate,
+    minDate: today,
+    blockedDays: qbFullBlockedDays,
+    disableBlocked: true,
+    onSelect: async (ds) => {
+      qbDate = ds;
+      qbTime = null;
+      qbBlockedSlotsCache = null;
+      qbBlockedSlotsCacheDate = null;
+      document.getElementById('qb-datetime').value = '';
+      const dd = new Date(ds + 'T12:00:00');
+      document.getElementById('qb-modal-date').textContent =
+        dd.toLocaleDateString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      await renderQbSlots();
+      updateQbDtDisplay();
+    }
+  });
+
+  initQbClientSearch();
+  await renderQbSlots();
+  updateQbDtDisplay();
+  document.getElementById('qb-modal').classList.add('open');
+}
+
+function closeQuickBooking() {
+  document.getElementById('qb-modal').classList.remove('open');
+}
+
+async function getQbBlockedSlots(date) {
+  if (qbBlockedSlotsCacheDate === date && qbBlockedSlotsCache !== null) return qbBlockedSlotsCache;
+  const [dayBookings, blockedPeriods] = await Promise.all([
+    api('GET', `/api/bookings?date=${date}`),
+    api('GET', `/api/blocked-periods?date=${date}`)
+  ]);
+  const blocked = new Set();
+  qbDayFullyBlocked = false;
+  const fullDayBlock = blockedPeriods.find(bp => bp.cijeli_dan);
+  if (fullDayBlock) {
+    qbDayFullyBlocked = true;
+    for (let h = 8; h <= 19; h++) {
+      blocked.add(`${String(h).padStart(2,'0')}:00`);
+      blocked.add(`${String(h).padStart(2,'0')}:30`);
+    }
+    qbBlockedSlotsCacheDate = date; qbBlockedSlotsCache = blocked; return blocked;
+  }
+  for (const bp of blockedPeriods) {
+    if (bp.od && bp.do) {
+      const [oh, om] = bp.od.slice(0,5).split(':').map(Number);
+      const [dh, dm] = bp.do.slice(0,5).split(':').map(Number);
+      for (let min = oh*60+om; min < dh*60+dm; min += 30)
+        blocked.add(`${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`);
+    }
+  }
+  for (const b of dayBookings) {
+    if (b.status === 'cancelled') continue;
+    const [h, m] = b.datum_vrijeme.slice(11,16).split(':').map(Number);
+    const dur = parseInt(b.trajanje) || 30;
+    for (let offset = 0; offset < dur; offset += 30) {
+      const t = h*60+m+offset;
+      blocked.add(`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`);
+    }
+  }
+  qbBlockedSlotsCacheDate = date; qbBlockedSlotsCache = blocked; return blocked;
+}
+
+async function renderQbSlots() {
+  const el = document.getElementById('qb-time-slots');
+  if (!el) return;
+  const slots = [];
+  for (let h = 8; h <= 19; h++) { slots.push(`${String(h).padStart(2,'0')}:00`); slots.push(`${String(h).padStart(2,'0')}:30`); }
+  const blocked = qbDate ? await getQbBlockedSlots(qbDate) : new Set();
+  if (qbDayFullyBlocked) {
+    qbTime = null; document.getElementById('qb-datetime').value = ''; updateQbDtDisplay();
+    el.innerHTML = '<div class="day-blocked-msg">🚫 Ovaj dan je blokiran</div>'; return;
+  }
+  const svcId = document.getElementById('qb-service').value;
+  const svc = services.find(s => String(s.id) === String(svcId));
+  const duration = parseInt(svc?.trajanje) || 30;
+  if (qbTime && !slotAvailable(qbTime, blocked, duration)) {
+    qbTime = null; document.getElementById('qb-datetime').value = ''; updateQbDtDisplay();
+  }
+  el.innerHTML = '<div class="tslots">' +
+    slots.map(t => {
+      const avail = slotAvailable(t, blocked, duration);
+      const cls = `tslot${t === qbTime ? ' sel' : ''}${!avail ? ' blocked' : ''}`;
+      return `<button class="${cls}" ${!avail ? 'disabled' : `onclick="pickQbTime('${t}')"`}>${t}</button>`;
+    }).join('') + '</div>';
+}
+
+function pickQbTime(t) {
+  qbTime = t;
+  renderQbSlots();
+  if (qbDate) document.getElementById('qb-datetime').value = `${qbDate}T${qbTime}`;
+  updateQbDtDisplay();
+}
+
+function updateQbDtDisplay() {
+  const disp = document.getElementById('qb-dt-display');
+  if (!disp) return;
+  if (qbDate && qbTime) {
+    const dt = new Date(`${qbDate}T${qbTime}`);
+    disp.textContent = '✓ ' + dt.toLocaleString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    disp.className = 'dt-display dt-ready';
+  } else {
+    disp.textContent = qbDate ? 'Odaberi termin →' : '';
+    disp.className = 'dt-display';
+  }
+}
+
+function initQbClientSearch() {
+  const oldSearch = document.getElementById('qb-client-search');
+  const newSearch = oldSearch.cloneNode(true);
+  oldSearch.parentNode.replaceChild(newSearch, oldSearch);
+  const dropdown = document.getElementById('qb-client-dropdown');
+  const hidden = document.getElementById('qb-client');
+
+  function showDropdown(q) {
+    const matches = q
+      ? clients.filter(c => `${c.ime} ${c.prezime} ${c.email} ${c.telefon||''}`.toLowerCase().includes(q)).slice(0,10)
+      : clients.slice(0,10);
+    if (!matches.length) { dropdown.style.display = 'none'; return; }
+    dropdown.innerHTML = matches.map(c =>
+      `<div class="client-option" onclick="selectQbClientSearch(${c.id},'${(c.ime+' '+c.prezime).replace(/'/g,"\\'")}')">
+        <span class="co-name">${c.ime} ${c.prezime}</span><span class="co-email">${c.email}</span>
+      </div>`).join('');
+    dropdown.style.display = 'block';
+  }
+
+  newSearch.addEventListener('focus', () => showDropdown(newSearch.value.trim().toLowerCase()));
+  newSearch.addEventListener('input', () => { hidden.value = ''; showDropdown(newSearch.value.trim().toLowerCase()); });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#qb-modal .client-search-wrap')) dropdown.style.display = 'none';
+  });
+}
+
+function selectQbClientSearch(id, name) {
+  document.getElementById('qb-client').value = id;
+  document.getElementById('qb-client-search').value = name;
+  document.getElementById('qb-client-dropdown').style.display = 'none';
+}
+
+async function submitQuickBooking() {
+  const clientId = document.getElementById('qb-client').value;
+  if (!clientId) { toast('Odaberi klijenta.', 'error'); return; }
+  const serviceId = document.getElementById('qb-service').value;
+  if (!serviceId) { toast('Odaberi uslugu.', 'error'); return; }
+  const datetimeVal = document.getElementById('qb-datetime').value;
+  if (!datetimeVal) { toast('Odaberi termin.', 'error'); return; }
+  try {
+    await api('POST', '/api/bookings', {
+      client_id: parseInt(clientId), service_id: parseInt(serviceId),
+      datum_vrijeme: datetimeVal, napomena: document.getElementById('qb-napomena').value.trim()
+    });
+    toast('Termin rezerviran! Email potvrda je poslana.');
+    closeQuickBooking();
+    loadBookings(calStates['bookings-calendar']?.selected || '');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ============================================================
+//  QUICK BLOCK MODAL (u Termini tabu)
+// ============================================================
+function openQuickBlock() {
+  const selDate = calStates['bookings-calendar']?.selected || new Date().toISOString().slice(0, 10);
+  const d = new Date(selDate + 'T12:00:00');
+  document.getElementById('qb-blk-datum').value = selDate;
+  document.getElementById('qb-blk-date-display').textContent =
+    d.toLocaleDateString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  document.getElementById('qb-blk-razlog').value = '';
+  document.getElementById('qb-blk-cijeli').checked = true;
+  document.getElementById('qb-blk-time-range').style.display = 'none';
+  document.getElementById('qb-block-modal').classList.add('open');
+}
+
+function closeQuickBlock() {
+  document.getElementById('qb-block-modal').classList.remove('open');
+}
+
+async function submitQuickBlock() {
+  const datum = document.getElementById('qb-blk-datum').value;
+  const cijeliDan = document.getElementById('qb-blk-cijeli').checked;
+  const body = { datum, cijeli_dan: cijeliDan };
+  if (!cijeliDan) {
+    body.od = document.getElementById('qb-blk-od').value;
+    body['do'] = document.getElementById('qb-blk-do').value;
+    if (!body.od || !body['do']) { toast('Upiši "od" i "do" vrijeme.', 'error'); return; }
+    if (body.od >= body['do']) { toast('"Od" mora biti prije "do".', 'error'); return; }
+  }
+  const razlog = document.getElementById('qb-blk-razlog').value.trim();
+  if (razlog) body.razlog = razlog;
+  try {
+    await api('POST', '/api/blocked-periods', body);
+    toast('Dan blokiran.');
+    closeQuickBlock();
+    blockedSlotsCache = null; blockedSlotsCacheDate = null;
+    loadBookings(calStates['bookings-calendar']?.selected || '');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ============================================================
+//  BLOCKS
+// ============================================================
+let blocksData = [];
+let blockSelectedDate = null;
+
+async function loadBlocks() {
+  blocksData = await api('GET', '/api/blocked-periods');
+  const fullBlockedDays = [...new Set(blocksData.filter(b => b.cijeli_dan).map(b => parseDatum(b.datum)))];
+  const partialBlockedDays = [...new Set(blocksData.filter(b => !b.cijeli_dan).map(b => parseDatum(b.datum)))];
+
+  if (!calStates['blocks-date-cal']) {
+    calInit('blocks-date-cal', {
+      blockedDays: fullBlockedDays,
+      partialBlockedDays,
+      onSelect: (ds) => {
+        blockSelectedDate = ds;
+        document.getElementById('blk-datum').value = ds;
+        document.getElementById('blk-selected-date').textContent =
+          datumToLocal(ds).toLocaleDateString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      }
+    });
+  } else {
+    calStates['blocks-date-cal'].blockedDays = fullBlockedDays;
+    calStates['blocks-date-cal'].partialBlockedDays = partialBlockedDays;
+    calRender('blocks-date-cal');
+  }
+
+  renderBlocksList();
+}
+
+function renderBlocksList() {
+  const el = document.getElementById('blocks-list');
+  if (blocksData.length === 0) {
+    el.innerHTML = '<div class="empty">Nema blokada.</div>';
+    return;
+  }
+  // Sortiraj po datumu
+  const sorted = [...blocksData].sort((a, b) => a.datum.localeCompare(b.datum));
+  el.innerHTML = sorted.map(b => {
+    const dateStr = datumToLocal(b.datum).toLocaleDateString('hr-HR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+    const typeStr = b.cijeli_dan
+      ? '<span class="blk-badge blk-full">Cijeli dan</span>'
+      : `<span class="blk-badge blk-partial">${b.od ? b.od.slice(0,5) : '?'} – ${b.do ? b.do.slice(0,5) : '?'}</span>`;
+    return `
+      <div class="block-item">
+        <div class="block-item-info">
+          <div class="block-item-date">${dateStr}</div>
+          <div class="block-item-meta">${typeStr}${b.razlog ? ' · ' + b.razlog : ''}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="deleteBlock(${b.id})">Ukloni</button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function saveBlock() {
+  const datum = document.getElementById('blk-datum').value;
+  if (!datum) { toast('Odaberi datum u kalendaru.', 'error'); return; }
+
+  const cijeliDan = document.getElementById('blk-cijeli').checked;
+  const body = { datum, cijeli_dan: cijeliDan };
+
+  if (!cijeliDan) {
+    body.od = document.getElementById('blk-od').value;
+    body['do'] = document.getElementById('blk-do').value;
+    if (!body.od || !body['do']) { toast('Upiši "od" i "do" vrijeme.', 'error'); return; }
+    if (body.od >= body['do']) { toast('"Od" mora biti prije "do".', 'error'); return; }
+  }
+
+  const razlog = document.getElementById('blk-razlog').value.trim();
+  if (razlog) body.razlog = razlog;
+
+  try {
+    await api('POST', '/api/blocked-periods', body);
+    toast('Dan blokiran.');
+    document.getElementById('blk-razlog').value = '';
+    // Resetiraj cache za blokade u picker-u
+    blockedSlotsCache = null;
+    blockedSlotsCacheDate = null;
+    loadBlocks();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteBlock(id) {
+  if (!confirm('Ukloniti ovu blokadu?')) return;
+  try {
+    await api('DELETE', `/api/blocked-periods/${id}`);
+    toast('Blokada uklonjena.');
+    blockedSlotsCache = null;
+    blockedSlotsCacheDate = null;
+    loadBlocks();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ============================================================
 //  INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -736,6 +1210,20 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bf-new-client-toggle').addEventListener('change', function () {
     document.getElementById('new-client-form').style.display = this.checked ? 'block' : 'none';
     document.getElementById('bf-client').disabled = this.checked;
+  });
+
+  document.querySelectorAll('input[name="blk-type"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const showTime = document.getElementById('blk-sati-radio').checked;
+      document.getElementById('blk-time-range').style.display = showTime ? 'block' : 'none';
+    });
+  });
+
+  document.querySelectorAll('input[name="qb-blk-type"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const showTime = document.getElementById('qb-blk-sati').checked;
+      document.getElementById('qb-blk-time-range').style.display = showTime ? 'block' : 'none';
+    });
   });
 
   showView('dashboard');

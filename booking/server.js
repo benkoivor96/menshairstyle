@@ -7,6 +7,8 @@ const db = require('./db/database');
 const email = require('./services/emailService');
 const { startScheduler } = require('./services/scheduler');
 
+const pgSession = require('connect-pg-simple')(session);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE = (process.env.BASE_PATH || '').replace(/\/$/, '');
@@ -20,10 +22,14 @@ const SALON_NAME = process.env.SALON_NAME || "Men's Hair Style";
 // ============================================================
 app.use(express.json());
 app.use(session({
+  store: new pgSession({
+    pool: db.pool,
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || 'mhs-secret-key-change-me',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 8 * 60 * 60 * 1000 }
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 dana
 }));
 
 function serveHtml(file) {
@@ -192,6 +198,31 @@ app.put(BASE + '/api/bookings/:id', async (req, res) => {
 
 app.delete(BASE + '/api/bookings/:id', async (req, res) => {
   try { await db.cancelBooking(req.params.id); res.json({ ok: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ============================================================
+//  BLOCKED PERIODS
+// ============================================================
+app.get(BASE + '/api/blocked-periods', async (req, res) => {
+  try {
+    const { date } = req.query;
+    res.json(date ? await db.getBlockedPeriodsForDate(date) : await db.getBlockedPeriods());
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post(BASE + '/api/blocked-periods', async (req, res) => {
+  const { datum, cijeli_dan, od, razlog } = req.body;
+  const doo = req.body['do'];
+  if (!datum) return res.status(400).json({ error: 'Datum je obavezan' });
+  try {
+    const bp = await db.insertBlockedPeriod({ datum, cijeli_dan, od, do: doo, razlog });
+    res.status(201).json(bp);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete(BASE + '/api/blocked-periods/:id', async (req, res) => {
+  try { await db.deleteBlockedPeriod(req.params.id); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 

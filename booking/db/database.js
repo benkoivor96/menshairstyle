@@ -39,6 +39,16 @@ async function init() {
       email_review_sent   BOOLEAN DEFAULT FALSE,
       created_at          TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS blocked_periods (
+      id         SERIAL PRIMARY KEY,
+      datum      DATE NOT NULL,
+      cijeli_dan BOOLEAN DEFAULT TRUE,
+      od         TIME,
+      "do"       TIME,
+      razlog     TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 
   const { rows } = await pool.query('SELECT COUNT(*) FROM services');
@@ -176,7 +186,7 @@ async function updateBooking({ id, client_id, service_id, datum_vrijeme, napomen
 }
 
 async function cancelBooking(id) {
-  await pool.query("UPDATE bookings SET status='cancelled' WHERE id=$1", [id]);
+  await pool.query('DELETE FROM bookings WHERE id=$1', [id]);
 }
 
 async function markEmailSent(field, id) {
@@ -238,6 +248,35 @@ async function getUpcoming() {
     .sort((a, b) => new Date(a.datum_vrijeme) - new Date(b.datum_vrijeme));
 }
 
+// ============================================================
+//  BLOCKED PERIODS
+// ============================================================
+async function getBlockedPeriods() {
+  const { rows } = await pool.query(
+    'SELECT * FROM blocked_periods ORDER BY datum ASC, od ASC NULLS FIRST'
+  );
+  return rows;
+}
+
+async function getBlockedPeriodsForDate(date) {
+  const { rows } = await pool.query(
+    'SELECT * FROM blocked_periods WHERE datum=$1', [date]
+  );
+  return rows;
+}
+
+async function insertBlockedPeriod({ datum, cijeli_dan, od, do: doo, razlog }) {
+  const { rows } = await pool.query(
+    `INSERT INTO blocked_periods (datum, cijeli_dan, od, "do", razlog) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+    [datum, cijeli_dan !== false, od || null, doo || null, razlog || null]
+  );
+  return rows[0];
+}
+
+async function deleteBlockedPeriod(id) {
+  await pool.query('DELETE FROM blocked_periods WHERE id=$1', [id]);
+}
+
 module.exports = {
   init, pool,
   getClients, getClient, insertClient, updateClient, deleteClient,
@@ -245,5 +284,6 @@ module.exports = {
   getBookings, getBookingsByDate, getBookingsByClientId, getBooking,
   insertBooking, updateBooking, cancelBooking, markEmailSent,
   getPending24h, getPending1h, getPendingReview, completeBooking,
-  getUpcoming
+  getUpcoming,
+  getBlockedPeriods, getBlockedPeriodsForDate, insertBlockedPeriod, deleteBlockedPeriod
 };
