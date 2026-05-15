@@ -318,14 +318,13 @@ async function loadClients(search = '') {
     return;
   }
   tbody.innerHTML = filtered.map(c => `
-    <tr>
+    <tr class="client-row" onclick="openClientDetail(${c.id})">
       <td><strong style="color:#fff">${c.ime} ${c.prezime}</strong></td>
       <td>${c.email}</td>
       <td>${c.telefon || '—'}</td>
       <td>${new Date(c.created_at).toLocaleDateString('hr-HR')}</td>
-      <td>
+      <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-sm btn-outline" onclick="openClientDetail(${c.id})">Detalji</button>
           <button class="btn btn-sm btn-outline" onclick="openEditClient(${c.id})">Uredi</button>
           <button class="btn btn-sm btn-danger" onclick="deleteClient(${c.id})">Obriši</button>
         </div>
@@ -470,13 +469,10 @@ function initClientSearch() {
   const hidden = document.getElementById('bf-client');
   if (!search) return;
 
-  search.addEventListener('input', () => {
-    const q = search.value.trim().toLowerCase();
-    hidden.value = '';
-    if (!q) { dropdown.style.display = 'none'; return; }
-    const matches = clients.filter(c =>
-      `${c.ime} ${c.prezime} ${c.email} ${c.telefon || ''}`.toLowerCase().includes(q)
-    ).slice(0, 8);
+  function showDropdown(q) {
+    const matches = q
+      ? clients.filter(c => `${c.ime} ${c.prezime} ${c.email} ${c.telefon || ''}`.toLowerCase().includes(q)).slice(0, 10)
+      : clients.slice(0, 10);
     if (!matches.length) { dropdown.style.display = 'none'; return; }
     dropdown.innerHTML = matches.map(c =>
       `<div class="client-option" onclick="selectClientSearch(${c.id},'${(c.ime+' '+c.prezime).replace(/'/g,"\\'")}')">
@@ -485,6 +481,12 @@ function initClientSearch() {
       </div>`
     ).join('');
     dropdown.style.display = 'block';
+  }
+
+  search.addEventListener('focus', () => showDropdown(search.value.trim().toLowerCase()));
+  search.addEventListener('input', () => {
+    hidden.value = '';
+    showDropdown(search.value.trim().toLowerCase());
   });
 
   document.addEventListener('click', (e) => {

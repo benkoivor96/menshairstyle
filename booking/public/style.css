@@ -154,6 +154,8 @@ thead th {
 }
 tbody tr { transition: background 0.15s; }
 tbody tr:hover { background: rgba(255,255,255,0.02); }
+tbody tr.client-row { cursor: pointer; }
+tbody tr.client-row:hover { background: rgba(194,164,126,0.06); }
 tbody td {
   padding: 12px 14px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
