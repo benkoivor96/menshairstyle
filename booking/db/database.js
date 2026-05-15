@@ -127,7 +127,7 @@ async function deleteService(id) {
 //  BOOKINGS
 // ============================================================
 const ENRICH = `
-  SELECT b.*, c.ime, c.prezime, c.email, c.telefon, s.naziv AS usluga
+  SELECT b.*, c.ime, c.prezime, c.email, c.telefon, s.naziv AS usluga, s.trajanje
   FROM bookings b
   LEFT JOIN clients c ON b.client_id = c.id
   LEFT JOIN services s ON b.service_id = s.id

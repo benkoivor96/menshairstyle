@@ -14,6 +14,10 @@ let editingClientId = null;
 let editingBookingId = null;
 let pickerDate = null;
 let pickerTime = null;
+let blockedSlotsCache = null;
+let blockedSlotsCacheDate = null;
+let detailClientId = null;
+let pendingPrefillClientId = null;
 const calStates = {};
 
 // ============================================================
@@ -131,6 +135,8 @@ function calClick(id, ds) {
 function initBookingPicker() {
   pickerDate = null;
   pickerTime = null;
+  blockedSlotsCache = null;
+  blockedSlotsCacheDate = null;
   document.getElementById('bf-datetime').value = '';
   const disp = document.getElementById('bf-dt-display');
   if (disp) { disp.textContent = ''; disp.className = 'dt-display'; }
@@ -140,17 +146,56 @@ function initBookingPicker() {
   const today = new Date().toISOString().slice(0, 10);
   calInit('booking-date-cal', {
     minDate: today,
-    onSelect: (ds) => {
+    onSelect: async (ds) => {
       pickerDate = ds;
       pickerTime = null;
+      blockedSlotsCache = null;
+      blockedSlotsCacheDate = null;
       document.getElementById('bf-datetime').value = '';
-      renderPickerSlots();
+      await renderPickerSlots();
       updateDtDisplay();
     }
   });
 }
 
-function renderPickerSlots() {
+async function getBlockedSlots(date) {
+  if (blockedSlotsCacheDate === date && blockedSlotsCache !== null) return blockedSlotsCache;
+  const dayBookings = await api('GET', `/api/bookings?date=${date}`);
+  const blocked = new Set();
+  for (const b of dayBookings) {
+    if (b.status === 'cancelled') continue;
+    const timeStr = b.datum_vrijeme.slice(11, 16);
+    const [h, m] = timeStr.split(':').map(Number);
+    const startMin = h * 60 + m;
+    const duration = parseInt(b.trajanje) || 30;
+    for (let offset = 0; offset < duration; offset += 30) {
+      const total = startMin + offset;
+      blocked.add(`${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`);
+    }
+  }
+  blockedSlotsCacheDate = date;
+  blockedSlotsCache = blocked;
+  return blocked;
+}
+
+function getSelectedServiceDuration() {
+  const serviceId = document.getElementById('bf-service').value;
+  const svc = services.find(s => String(s.id) === String(serviceId));
+  return parseInt(svc?.trajanje) || 30;
+}
+
+function slotAvailable(time, blocked, duration) {
+  const [h, m] = time.split(':').map(Number);
+  const startMin = h * 60 + m;
+  for (let offset = 0; offset < duration; offset += 30) {
+    const total = startMin + offset;
+    const t = `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+    if (blocked.has(t)) return false;
+  }
+  return true;
+}
+
+async function renderPickerSlots() {
   const wrap = document.getElementById('booking-time-wrap');
   const el = document.getElementById('booking-time-slots');
   if (!wrap || !el) return;
@@ -162,8 +207,22 @@ function renderPickerSlots() {
     slots.push(`${String(h).padStart(2,'0')}:30`);
   }
 
+  const blocked = pickerDate ? await getBlockedSlots(pickerDate) : new Set();
+  const duration = getSelectedServiceDuration();
+
+  // If currently selected time is now blocked, deselect it
+  if (pickerTime && !slotAvailable(pickerTime, blocked, duration)) {
+    pickerTime = null;
+    document.getElementById('bf-datetime').value = '';
+    updateDtDisplay();
+  }
+
   el.innerHTML = '<div class="tslots">' +
-    slots.map(t => `<button class="tslot${t === pickerTime ? ' sel' : ''}" onclick="pickTime('${t}')">${t}</button>`).join('') +
+    slots.map(t => {
+      const avail = slotAvailable(t, blocked, duration);
+      const cls = `tslot${t === pickerTime ? ' sel' : ''}${!avail ? ' blocked' : ''}`;
+      return `<button class="${cls}" ${!avail ? 'disabled' : `onclick="pickTime('${t}')"`}>${t}</button>`;
+    }).join('') +
     '</div>';
 }
 
@@ -275,7 +334,14 @@ async function loadClients(search = '') {
   `).join('');
 }
 
+function bookFromDetail() {
+  pendingPrefillClientId = detailClientId;
+  closeClientDetail();
+  showView('booking');
+}
+
 async function openClientDetail(id) {
+  detailClientId = id;
   const data = await api('GET', `/api/clients/${id}`);
   const panel = document.getElementById('client-detail');
   document.getElementById('detail-name').textContent = `${data.ime} ${data.prezime}`;
@@ -360,24 +426,76 @@ async function deleteClient(id) {
 //  BOOKING FORM
 // ============================================================
 async function loadBookingForm(prefillClientId) {
+  const clientToFill = prefillClientId || pendingPrefillClientId;
+  pendingPrefillClientId = null;
+
   [clients, services] = await Promise.all([
     api('GET', '/api/clients'),
     api('GET', '/api/services')
   ]);
 
-  const clientSel = document.getElementById('bf-client');
-  clientSel.innerHTML = '<option value="">— Odaberi klijenta —</option>' +
-    clients.map(c => `<option value="${c.id}">${c.ime} ${c.prezime} (${c.email})</option>`).join('');
-  if (prefillClientId) clientSel.value = prefillClientId;
+  // Client search init
+  document.getElementById('bf-client').value = '';
+  document.getElementById('bf-client-search').value = '';
+  document.getElementById('bf-client-dropdown').style.display = 'none';
+  if (clientToFill) {
+    const c = clients.find(x => x.id === clientToFill || String(x.id) === String(clientToFill));
+    if (c) {
+      document.getElementById('bf-client').value = c.id;
+      document.getElementById('bf-client-search').value = `${c.ime} ${c.prezime}`;
+    }
+  }
 
   const serviceSel = document.getElementById('bf-service');
   serviceSel.innerHTML = '<option value="">— Odaberi uslugu —</option>' +
     services.map(s => `<option value="${s.id}">${s.naziv}${s.trajanje ? ' · ' + s.trajanje + ' min' : ''}</option>`).join('');
 
+  // Re-render slots on service change
+  serviceSel.onchange = async () => {
+    if (pickerDate) {
+      blockedSlotsCache = null;
+      await renderPickerSlots();
+    }
+  };
+
   initBookingPicker();
   document.getElementById('bf-napomena').value = '';
   document.getElementById('new-client-form').style.display = 'none';
   document.getElementById('bf-new-client-toggle').checked = false;
+}
+
+function initClientSearch() {
+  const search = document.getElementById('bf-client-search');
+  const dropdown = document.getElementById('bf-client-dropdown');
+  const hidden = document.getElementById('bf-client');
+  if (!search) return;
+
+  search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    hidden.value = '';
+    if (!q) { dropdown.style.display = 'none'; return; }
+    const matches = clients.filter(c =>
+      `${c.ime} ${c.prezime} ${c.email} ${c.telefon || ''}`.toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (!matches.length) { dropdown.style.display = 'none'; return; }
+    dropdown.innerHTML = matches.map(c =>
+      `<div class="client-option" onclick="selectClientSearch(${c.id},'${(c.ime+' '+c.prezime).replace(/'/g,"\\'")}')">
+        <span class="co-name">${c.ime} ${c.prezime}</span>
+        <span class="co-email">${c.email}</span>
+      </div>`
+    ).join('');
+    dropdown.style.display = 'block';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.client-search-wrap')) dropdown.style.display = 'none';
+  });
+}
+
+function selectClientSearch(id, name) {
+  document.getElementById('bf-client').value = id;
+  document.getElementById('bf-client-search').value = name;
+  document.getElementById('bf-client-dropdown').style.display = 'none';
 }
 
 async function submitBooking() {
@@ -601,6 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-logout-mobile').addEventListener('click', logout);
 
   document.getElementById('client-search').addEventListener('input', e => loadClients(e.target.value));
+  initClientSearch();
 
   document.getElementById('btn-clear-filter').addEventListener('click', () => {
     if (calStates['bookings-calendar']) {
