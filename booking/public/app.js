@@ -375,7 +375,11 @@ let dashDate = new Date();
 dashDate.setHours(0, 0, 0, 0);
 
 function dashDayNav(dir) {
-  dashDate.setDate(dashDate.getDate() + dir);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const next = new Date(dashDate);
+  next.setDate(next.getDate() + dir);
+  if (next < today) return; // ne možeš ići u prošlost
+  dashDate = next;
   renderDashDay();
 }
 
@@ -399,8 +403,21 @@ function dashDayLabel() {
 }
 
 async function renderDashDay() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const isToday = dashDate.getTime() === today.getTime();
+  // Sakrij lijevu strelicu kad smo na danas
+  const leftBtn = document.querySelector('.day-nav-btn');
+  if (leftBtn) leftBtn.style.opacity = isToday ? '0.2' : '';
+
   document.getElementById('dash-day-label').textContent = dashDayLabel();
-  const bookings = await api('GET', `/api/bookings?date=${dashDateStr()}`);
+  let bookings = await api('GET', `/api/bookings?date=${dashDateStr()}`);
+
+  // Za danas — prikaži samo od trenutnog momenta
+  if (isToday) {
+    const now = Date.now();
+    bookings = bookings.filter(b => new Date(b.datum_vrijeme).getTime() >= now);
+  }
+
   const list = document.getElementById('upcoming-list');
   if (bookings.length === 0) {
     list.innerHTML = '<div class="empty">Nema termina za ovaj dan.</div>';
