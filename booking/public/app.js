@@ -371,26 +371,43 @@ function showView(id) {
 // ============================================================
 //  DASHBOARD
 // ============================================================
-async function loadDashboard() {
-  const today = new Date().toISOString().slice(0, 10);
-  const [todayBookings, upcoming, weekData] = await Promise.all([
-    api('GET', `/api/bookings?date=${today}`),
-    api('GET', '/api/bookings/upcoming'),
-    api('GET', '/api/bookings/upcoming-week-count')
-  ]);
+let dashDate = new Date();
+dashDate.setHours(0, 0, 0, 0);
 
-  document.getElementById('stat-today').textContent = todayBookings.length;
-  document.getElementById('stat-upcoming').textContent = weekData.count;
+function dashDayNav(dir) {
+  dashDate.setDate(dashDate.getDate() + dir);
+  renderDashDay();
+}
 
-  const allClients = await api('GET', '/api/clients');
-  document.getElementById('stat-clients').textContent = allClients.length;
+function dashDateStr() {
+  const y = dashDate.getFullYear();
+  const m = String(dashDate.getMonth() + 1).padStart(2, '0');
+  const d = String(dashDate.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
+function dashDayLabel() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((dashDate - today) / 86400000);
+  const days = ['ned','pon','uto','sri','čet','pet','sub'];
+  const dayName = days[dashDate.getDay()];
+  const label = `${dayName} ${dashDate.getDate()}.${dashDate.getMonth()+1}.${dashDate.getFullYear()}`;
+  if (diff === 0) return `danas — ${label}`;
+  if (diff === 1) return `sutra — ${label}`;
+  if (diff === -1) return `jučer — ${label}`;
+  return label;
+}
+
+async function renderDashDay() {
+  document.getElementById('dash-day-label').textContent = dashDayLabel();
+  const bookings = await api('GET', `/api/bookings?date=${dashDateStr()}`);
   const list = document.getElementById('upcoming-list');
-  if (upcoming.length === 0) {
-    list.innerHTML = '<div class="empty">Nema nadolazećih termina.</div>';
+  if (bookings.length === 0) {
+    list.innerHTML = '<div class="empty">Nema termina za ovaj dan.</div>';
     return;
   }
-  list.innerHTML = upcoming.map(b => `
+  const sorted = bookings.slice().sort((a, b) => new Date(a.datum_vrijeme) - new Date(b.datum_vrijeme));
+  list.innerHTML = sorted.map(b => `
     <div class="upcoming-card">
       <div class="upcoming-time">
         <div class="day">${fmtDate(b.datum_vrijeme)}</div>
@@ -403,6 +420,23 @@ async function loadDashboard() {
       ${statusBadge(b.status)}
     </div>
   `).join('');
+}
+
+async function loadDashboard() {
+  const today = new Date().toISOString().slice(0, 10);
+  dashDate = new Date(); dashDate.setHours(0, 0, 0, 0);
+
+  const [todayBookings, weekData, allClients] = await Promise.all([
+    api('GET', `/api/bookings?date=${today}`),
+    api('GET', '/api/bookings/upcoming-week-count'),
+    api('GET', '/api/clients')
+  ]);
+
+  document.getElementById('stat-today').textContent = todayBookings.length;
+  document.getElementById('stat-upcoming').textContent = weekData.count;
+  document.getElementById('stat-clients').textContent = allClients.length;
+
+  await renderDashDay();
 }
 
 // ============================================================

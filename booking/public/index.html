@@ -79,6 +79,11 @@
         <div class="section-heading" style="margin-bottom:0;">Nadolazeći termini</div>
         <button class="btn-link-gold" onclick="showView('booking')">+ Novi termin</button>
       </div>
+      <div class="day-nav">
+        <button class="day-nav-btn" onclick="dashDayNav(-1)">&#8249;</button>
+        <span class="day-nav-label" id="dash-day-label"></span>
+        <button class="day-nav-btn" onclick="dashDayNav(1)">&#8250;</button>
+      </div>
       <div class="upcoming-list" id="upcoming-list">
         <div class="empty">Učitavanje...</div>
       </div>

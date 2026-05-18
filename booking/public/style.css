@@ -150,6 +150,39 @@ body {
 }
 .btn-link-gold:hover { opacity: 1; }
 
+/* ---- Day navigator ---- */
+.day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 4px;
+  margin-bottom: 16px;
+}
+.day-nav-btn {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 12px;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.day-nav-btn:hover { opacity: 1; }
+.day-nav-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text);
+  text-align: center;
+  text-transform: uppercase;
+}
+
 /* ---- Table ---- */
 .table-wrap { overflow-x: auto; }
 table {
