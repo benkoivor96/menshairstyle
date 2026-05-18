@@ -572,7 +572,7 @@ ul { list-style: none; }
 }
 .why-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
 .why-card {
@@ -882,7 +882,8 @@ ul { list-style: none; }
   .svc-col-right .svc-item { text-align: center; }
   .svc-col-right .svc-item-row { flex-direction: column; align-items: center; }
 
-  .why-grid { grid-template-columns: 1fr; }
+  .why-grid { grid-template-columns: repeat(2, 1fr); }
+  .why-card { padding: 28px 16px; }
   .why-card { padding: 32px 24px; }
 
   .insta-grid { grid-template-columns: repeat(3, 1fr); }
@@ -905,6 +906,7 @@ ul { list-style: none; }
 @media (max-width: 480px) {
   .hero-title { font-size: 34px; }
   .insta-grid { grid-template-columns: repeat(2, 1fr); }
+  .why-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -1086,6 +1088,11 @@ ul { list-style: none; }
         <div class="why-icon"><img src="sisanje.svg" alt="Kvalitetna oprema" style="width:100%;height:100%;object-fit:contain;"></div>
         <h3>Kvalitetna Oprema</h3>
         <p>Koristimo samo najkvalitetnije proizvode kako bi tvoja kosa i brada bili savršeni.</p>
+      </div>
+      <div class="why-card reveal reveal-d3">
+        <div class="why-icon" style="display:flex;align-items:center;justify-content:center;"><img src="petfriendly.svg" alt="Pet friendly" style="width:75%;height:75%;object-fit:contain;"></div>
+        <h3>Pet Friendly</h3>
+        <p>Dovedi svog ljubimca — kućni ljubimci su kod nas uvijek dobrodošli.</p>
       </div>
     </div>
   </div>
