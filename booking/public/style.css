@@ -135,6 +135,21 @@ body {
   margin-bottom: 16px;
 }
 
+.btn-link-gold {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.btn-link-gold:hover { opacity: 1; }
+
 /* ---- Table ---- */
 .table-wrap { overflow-x: auto; }
 table {
@@ -413,15 +428,10 @@ tbody tr:last-child td { border-bottom: none; }
   .toolbar { flex-wrap: wrap; gap: 8px; }
   .toolbar input { flex: 1; min-width: 0; }
 
-  /* Sakrij Email i Dodan kolumne */
-  #view-clients thead th:nth-child(2),
-  #view-clients tbody td:nth-child(2),
-  #view-clients thead th:nth-child(4),
-  #view-clients tbody td:nth-child(4) { display: none; }
 
   /* Kompaktni action gumbi */
-  #view-clients tbody td:nth-child(5) { padding: 8px 10px; }
-  #view-clients tbody td:nth-child(5) .btn { padding: 6px 10px; font-size: 11px; }
+  #view-clients tbody td:nth-child(4) { padding: 8px 10px; }
+  #view-clients tbody td:nth-child(4) .btn { padding: 6px 10px; font-size: 11px; }
 
   /* Client detail panel */
   .client-detail { padding: 16px; }
@@ -478,6 +488,67 @@ tbody tr:last-child td { border-bottom: none; }
 
 @media (max-width: 768px) {
   .bottom-nav { display: flex; flex-direction: column; }
+}
+
+/* ---- Više sheet ---- */
+.vise-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 300;
+}
+.vise-overlay.open { display: block; }
+
+.vise-sheet {
+  position: fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom)); left: 0; right: 0;
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  padding: 8px 0 16px;
+  z-index: 301;
+  transform: translateY(110%);
+  transition: transform 0.25s ease;
+  display: none;
+}
+.vise-sheet.open {
+  display: block;
+  transform: translateY(0);
+}
+
+.vise-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 12px;
+}
+
+.vise-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 24px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+.vise-item:active { background: rgba(194,164,126,0.07); }
+.vise-item svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--gold); }
+.vise-logout { color: #e07070; }
+.vise-logout svg { color: #e07070; }
+
+.vise-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
 }
 
 /* ---- Bookings two-column layout ---- */

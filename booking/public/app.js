@@ -336,11 +336,27 @@ function updateDtDisplay() {
 // ============================================================
 //  NAVIGATION
 // ============================================================
+function openVise() {
+  document.getElementById('vise-overlay').classList.add('open');
+  document.getElementById('vise-sheet').classList.add('open');
+  document.getElementById('btn-vise').classList.add('active');
+}
+function closeVise() {
+  document.getElementById('vise-overlay').classList.remove('open');
+  document.getElementById('vise-sheet').classList.remove('open');
+  document.getElementById('btn-vise').classList.remove('active');
+}
+
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('[data-view]').forEach(n => n.classList.remove('active'));
   document.getElementById(`view-${id}`).classList.add('active');
   document.querySelectorAll(`[data-view="${id}"]`).forEach(el => el.classList.add('active'));
+  // Više gumb ostaje aktivan kad su otvoreni services ili blocks
+  if (['services', 'blocks'].includes(id)) {
+    const btn = document.getElementById('btn-vise');
+    if (btn) btn.classList.add('active');
+  }
   document.getElementById('topbar-title').textContent =
     { dashboard: 'Dashboard', clients: 'Klijenti', booking: 'Novi termin', bookings: 'Termini', services: 'Usluge', blocks: 'Blokade' }[id];
 
@@ -393,21 +409,22 @@ async function loadDashboard() {
 // ============================================================
 async function loadClients(search = '') {
   clients = await api('GET', '/api/clients');
-  const filtered = search
+  const filtered = (search
     ? clients.filter(c => `${c.ime} ${c.prezime} ${c.email} ${c.telefon}`.toLowerCase().includes(search.toLowerCase()))
-    : clients;
+    : clients).slice().sort((a, b) =>
+      a.ime.localeCompare(b.ime, 'hr') || a.prezime.localeCompare(b.prezime, 'hr')
+    );
 
   const tbody = document.getElementById('clients-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">Nema klijenata.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty">Nema klijenata.</div></td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map(c => `
     <tr class="client-row" onclick="openClientDetail(${c.id})">
       <td><strong style="color:#fff">${c.ime} ${c.prezime}</strong></td>
-      <td>${c.email}</td>
       <td>${c.telefon || '—'}</td>
-      <td>${new Date(c.created_at).toLocaleDateString('hr-HR')}</td>
+      <td>${c.email || '—'}</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:6px;">
           <button class="btn btn-sm btn-outline" onclick="openEditClient(${c.id})">Uredi</button>
