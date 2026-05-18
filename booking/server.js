@@ -157,6 +157,11 @@ app.get(BASE + '/api/bookings/upcoming', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.get(BASE + '/api/bookings/upcoming-week-count', async (req, res) => {
+  try { res.json({ count: await db.getUpcomingWeekCount() }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.get(BASE + '/api/bookings', async (req, res) => {
   try {
     const { date } = req.query;

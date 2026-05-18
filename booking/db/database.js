@@ -239,13 +239,28 @@ async function completeBooking(id) {
 async function getUpcoming() {
   const all = await _getPendingBookings();
   const now = Date.now();
-  const in7 = now + 7 * 24 * 36e5;
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
   return all
     .filter(b => {
       const t = new Date(b.datum_vrijeme).getTime();
-      return t >= now && t <= in7;
+      return t >= now && t <= endOfDay.getTime();
     })
     .sort((a, b) => new Date(a.datum_vrijeme) - new Date(b.datum_vrijeme));
+}
+
+async function getUpcomingWeekCount() {
+  const all = await _getPendingBookings();
+  const now = Date.now();
+  const endOfWeek = new Date();
+  const day = endOfWeek.getDay(); // 0=ned, 1=pon...
+  const daysUntilSunday = day === 0 ? 0 : 7 - day;
+  endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday);
+  endOfWeek.setHours(23, 59, 59, 999);
+  return all.filter(b => {
+    const t = new Date(b.datum_vrijeme).getTime();
+    return t >= now && t <= endOfWeek.getTime();
+  }).length;
 }
 
 // ============================================================
@@ -284,6 +299,6 @@ module.exports = {
   getBookings, getBookingsByDate, getBookingsByClientId, getBooking,
   insertBooking, updateBooking, cancelBooking, markEmailSent,
   getPending24h, getPending1h, getPendingReview, completeBooking,
-  getUpcoming,
+  getUpcoming, getUpcomingWeekCount,
   getBlockedPeriods, getBlockedPeriodsForDate, insertBlockedPeriod, deleteBlockedPeriod
 };

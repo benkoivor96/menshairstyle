@@ -276,7 +276,7 @@ async function renderPickerSlots() {
   wrap.style.display = 'block';
 
   const slots = [];
-  for (let h = 8; h <= 19; h++) {
+  for (let h = 7; h <= 19; h++) {
     slots.push(`${String(h).padStart(2,'0')}:00`);
     slots.push(`${String(h).padStart(2,'0')}:30`);
   }
@@ -373,13 +373,14 @@ function showView(id) {
 // ============================================================
 async function loadDashboard() {
   const today = new Date().toISOString().slice(0, 10);
-  const [todayBookings, upcoming] = await Promise.all([
+  const [todayBookings, upcoming, weekData] = await Promise.all([
     api('GET', `/api/bookings?date=${today}`),
-    api('GET', '/api/bookings/upcoming')
+    api('GET', '/api/bookings/upcoming'),
+    api('GET', '/api/bookings/upcoming-week-count')
   ]);
 
   document.getElementById('stat-today').textContent = todayBookings.length;
-  document.getElementById('stat-upcoming').textContent = upcoming.length;
+  document.getElementById('stat-upcoming').textContent = weekData.count;
 
   const allClients = await api('GET', '/api/clients');
   document.getElementById('stat-clients').textContent = allClients.length;
@@ -962,7 +963,7 @@ async function renderQbSlots() {
   const el = document.getElementById('qb-time-slots');
   if (!el) return;
   const slots = [];
-  for (let h = 8; h <= 19; h++) { slots.push(`${String(h).padStart(2,'0')}:00`); slots.push(`${String(h).padStart(2,'0')}:30`); }
+  for (let h = 7; h <= 19; h++) { slots.push(`${String(h).padStart(2,'0')}:00`); slots.push(`${String(h).padStart(2,'0')}:30`); }
   const blocked = qbDate ? await getQbBlockedSlots(qbDate) : new Set();
   if (qbDayFullyBlocked) {
     qbTime = null; document.getElementById('qb-datetime').value = ''; updateQbDtDisplay();
