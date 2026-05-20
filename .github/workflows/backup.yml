@@ -27,7 +27,7 @@ jobs:
           wc -l backup_${DATE}.sql
 
       - name: Upload backup as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: db-backup-${{ github.run_id }}
           path: backup_*.sql
