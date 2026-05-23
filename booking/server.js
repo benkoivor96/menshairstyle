@@ -183,10 +183,11 @@ app.post(BASE + '/api/bookings', async (req, res) => {
     return res.status(400).json({ error: 'client_id, service_id i datum_vrijeme su obavezni' });
   try {
     const booking = await db.insertBooking({ client_id, service_id, datum_vrijeme, napomena: napomena || null });
-    try {
-      await email.sendConfirmation(booking);
-      await db.markEmailSent('email_potvrda_sent', booking.id);
-    } catch (emailErr) { console.error('Email greška:', emailErr.message); }
+    // EMAIL_ENABLED: trenutno pauzirano
+    // try {
+    //   await email.sendConfirmation(booking);
+    //   await db.markEmailSent('email_potvrda_sent', booking.id);
+    // } catch (emailErr) { console.error('Email greška:', emailErr.message); }
     res.status(201).json(booking);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -242,7 +243,7 @@ async function start() {
   console.log('Baza inicijalizirana.');
   app.listen(PORT, () => {
     console.log(`${SALON_NAME} Booking — http://localhost:${PORT}${BASE}`);
-    startScheduler();
+    // startScheduler(); // EMAIL_ENABLED: trenutno pauzirano
   });
 }
 
