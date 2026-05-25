@@ -352,13 +352,13 @@ function showView(id) {
   document.querySelectorAll('[data-view]').forEach(n => n.classList.remove('active'));
   document.getElementById(`view-${id}`).classList.add('active');
   document.querySelectorAll(`[data-view="${id}"]`).forEach(el => el.classList.add('active'));
-  // Više gumb ostaje aktivan kad su otvoreni services ili blocks
-  if (['services', 'blocks'].includes(id)) {
+  // Više gumb ostaje aktivan kad su otvoreni services, blocks ili email-templates
+  if (['services', 'blocks', 'email-templates'].includes(id)) {
     const btn = document.getElementById('btn-vise');
     if (btn) btn.classList.add('active');
   }
   document.getElementById('topbar-title').textContent =
-    { dashboard: 'Dashboard', clients: 'Klijenti', booking: 'Novi termin', bookings: 'Termini', services: 'Usluge', blocks: 'Blokade' }[id];
+    { dashboard: 'Dashboard', clients: 'Klijenti', booking: 'Novi termin', bookings: 'Termini', services: 'Usluge', blocks: 'Blokade', 'email-templates': 'Email predlošci' }[id];
 
   if (id === 'dashboard') loadDashboard();
   if (id === 'clients') loadClients();
@@ -366,6 +366,7 @@ function showView(id) {
   if (id === 'bookings') loadBookings();
   if (id === 'services') loadServices();
   if (id === 'blocks') loadBlocks();
+  if (id === 'email-templates') loadEmailTemplates();
 }
 
 // ============================================================
@@ -1297,3 +1298,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
   showView('dashboard');
 });
+
+// ============================================================
+//  EMAIL TEMPLATES
+// ============================================================
+const TEMPLATE_LABELS = {
+  confirmation: 'Potvrda termina',
+  reminder_24h: 'Podsjetnik 24h',
+  reminder_1h:  'Podsjetnik 1h',
+  review:       'Zahtjev za recenziju'
+};
+
+async function loadEmailTemplates() {
+  const templates = await api('GET', '/api/email-templates');
+  const container = document.getElementById('email-templates-list');
+  container.innerHTML = templates.map(t => `
+    <div class="template-card" id="tmpl-card-${t.key}">
+      <h3 class="template-card-title">${TEMPLATE_LABELS[t.key] || t.key}</h3>
+      <label class="form-label">Subject</label>
+      <input class="form-input" id="tmpl-subject-${t.key}" value="${escHtml(t.subject)}">
+      <label class="form-label" style="margin-top:12px">Poruka</label>
+      <textarea class="form-input form-textarea" id="tmpl-body-${t.key}" rows="8">${escHtml(t.body)}</textarea>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+        <button class="btn" onclick="saveEmailTemplate('${t.key}')">Spremi</button>
+        <button class="btn btn-outline" onclick="testEmailTemplate('${t.key}')">Pošalji test</button>
+        <span class="tmpl-saved" id="tmpl-saved-${t.key}" style="display:none;color:#4caf50">✓ Spremljeno</span>
+        <span class="tmpl-saved" id="tmpl-test-${t.key}" style="display:none;color:#4caf50">✓ Test poslan</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function testEmailTemplate(key) {
+  const to = prompt('Na koji email da pošaljemo test?', 'benko.ivor96@gmail.com');
+  if (!to) return;
+  try {
+    await api('POST', `/api/email-templates/${key}/test`, { to });
+    const el = document.getElementById(`tmpl-test-${key}`);
+    el.style.display = 'inline';
+    setTimeout(() => el.style.display = 'none', 4000);
+  } catch (err) {
+    alert('Greška: ' + err.message);
+  }
+}
+
+async function saveEmailTemplate(key) {
+  const subject = document.getElementById(`tmpl-subject-${key}`).value.trim();
+  const body = document.getElementById(`tmpl-body-${key}`).value;
+  if (!subject || !body) return alert('Subject i poruka su obavezni');
+  await api('PUT', `/api/email-templates/${key}`, { subject, body });
+  const saved = document.getElementById(`tmpl-saved-${key}`);
+  saved.style.display = 'inline';
+  setTimeout(() => saved.style.display = 'none', 3000);
+}

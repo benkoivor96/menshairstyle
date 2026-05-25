@@ -31,13 +31,16 @@ async function runReminders() {
     }
   }
 
-  // Review request (termin je prošao 30+ minuta)
+  // Review request (termin je prošao 30+ minuta, samo prvi posjet)
   const pastBookings = await db.getPendingReview();
   for (const booking of pastBookings) {
     try {
-      await email.sendReviewRequest(booking);
+      const firstVisit = await db.isFirstVisit(booking.client_id);
+      if (firstVisit && booking.email) {
+        await email.sendReviewRequest(booking);
+        log(`Review request poslan za booking #${booking.id} (${booking.ime} ${booking.prezime})`);
+      }
       await db.completeBooking(booking.id);
-      log(`Review request poslan za booking #${booking.id} (${booking.ime} ${booking.prezime})`);
     } catch (err) {
       log(`GREŠKA review request booking #${booking.id}: ${err.message}`);
     }

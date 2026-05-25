@@ -38,6 +38,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Blokade
     </button>
+    <button class="nav-item" data-view="email-templates">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Email predlošci
+    </button>
   </nav>
   <div style="padding:16px 20px;border-top:1px solid rgba(194,164,126,0.15);">
     <button class="nav-item" id="btn-logout" style="width:100%;color:#8A8A8A;">
@@ -327,6 +331,14 @@
       </div>
     </div>
 
+    <div class="view" id="view-email-templates">
+      <div class="toolbar">
+        <h2 class="section-title">Email predlošci</h2>
+      </div>
+      <p class="template-hint">Dostupni placeholderi: <code>{{ime}}</code> <code>{{prezime}}</code> <code>{{usluga}}</code> <code>{{datum_vrijeme}}</code> <code>{{adresa}}</code> <code>{{telefon}}</code> <code>{{info_box}}</code> <code>{{review_btn}}</code></p>
+      <div id="email-templates-list"></div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -363,6 +375,10 @@
   <button class="vise-item" onclick="closeVise(); showView('blocks')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     Blokade
+  </button>
+  <button class="vise-item" onclick="closeVise(); showView('email-templates')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    Email predlošci
   </button>
   <div class="vise-divider"></div>
   <button class="vise-item vise-logout" id="btn-logout-mobile">

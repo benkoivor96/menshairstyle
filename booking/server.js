@@ -233,6 +233,43 @@ app.delete(BASE + '/api/blocked-periods/:id', async (req, res) => {
 });
 
 // ============================================================
+//  EMAIL TEMPLATES
+// ============================================================
+app.get(BASE + '/api/email-templates', async (req, res) => {
+  try { res.json(await db.getEmailTemplates()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put(BASE + '/api/email-templates/:key', async (req, res) => {
+  const { subject, body } = req.body;
+  if (!subject || !body) return res.status(400).json({ error: 'Subject i body su obavezni' });
+  try { res.json(await db.updateEmailTemplate(req.params.key, subject, body)); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post(BASE + '/api/email-templates/:key/test', async (req, res) => {
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ error: 'Email adresa je obavezna' });
+  const dummyBooking = {
+    ime: 'Marko',
+    prezime: 'Horvat',
+    email: to,
+    usluga: 'Šišanje kose i frizure',
+    datum_vrijeme: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    client_id: 0
+  };
+  try {
+    const key = req.params.key;
+    if (key === 'confirmation') await email.sendConfirmation(dummyBooking);
+    else if (key === 'reminder_24h') await email.send24hReminder(dummyBooking);
+    else if (key === 'reminder_1h') await email.send1hReminder(dummyBooking);
+    else if (key === 'review') await email.sendReviewRequest(dummyBooking);
+    else return res.status(404).json({ error: 'Nepoznati template' });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ============================================================
 //  START
 // ============================================================
 async function start() {

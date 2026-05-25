@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false }
 });
 
 // ============================================================
@@ -49,7 +49,32 @@ async function init() {
       razlog     TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS email_templates (
+      key     VARCHAR(50) PRIMARY KEY,
+      subject TEXT NOT NULL,
+      body    TEXT NOT NULL
+    );
   `);
+
+  const { rows: tRows } = await pool.query('SELECT COUNT(*) FROM email_templates');
+  if (parseInt(tRows[0].count) === 0) {
+    await pool.query(`
+      INSERT INTO email_templates (key, subject, body) VALUES
+      ('confirmation',
+       'Potvrda termina — Men''s Hair Style',
+       E'Dragi/a {{ime}} {{prezime}},\n\nTvoj termin je uspješno rezerviran. Radujemo se tvom dolasku!\n\n{{info_box}}\n\nZa otkazivanje ili promjenu termina nazovi nas na {{telefon}}.'),
+      ('reminder_24h',
+       'Podsjetnik: sutra imaš termin u Men''s Hair Style',
+       E'Dragi/a {{ime}} {{prezime}},\n\nPodsjećamo te da te sutra čekamo u salonu!\n\n{{info_box}}\n\nAko moraš otkazati, javi nam se na {{telefon}}.'),
+      ('reminder_1h',
+       'Vidimo se za sat vremena — Men''s Hair Style',
+       E'Dragi/a {{ime}} {{prezime}},\n\nZa otprilike sat vremena čekamo te u salonu. Do videnja!\n\n{{info_box}}'),
+      ('review',
+       'Kako je bilo? Ostavi recenziju — Men''s Hair Style',
+       E'Dragi/a {{ime}} {{prezime}},\n\nNadamo se da si zadovoljan/na tvojim novim stilom! Ostavi recenziju — pomaže nam da rastemo i poboljšamo uslugu.\n\n{{review_btn}}')
+    `);
+  }
 
   const { rows } = await pool.query('SELECT COUNT(*) FROM services');
   if (parseInt(rows[0].count) === 0) {
@@ -264,6 +289,35 @@ async function getUpcomingWeekCount() {
 }
 
 // ============================================================
+//  EMAIL TEMPLATES
+// ============================================================
+async function getEmailTemplates() {
+  const { rows } = await pool.query('SELECT * FROM email_templates ORDER BY key');
+  return rows;
+}
+
+async function getEmailTemplate(key) {
+  const { rows } = await pool.query('SELECT * FROM email_templates WHERE key=$1', [key]);
+  return rows[0] || null;
+}
+
+async function updateEmailTemplate(key, subject, body) {
+  await pool.query(
+    'UPDATE email_templates SET subject=$1, body=$2 WHERE key=$3',
+    [subject, body, key]
+  );
+  return getEmailTemplate(key);
+}
+
+async function isFirstVisit(clientId) {
+  const { rows } = await pool.query(
+    "SELECT COUNT(*) FROM bookings WHERE client_id=$1 AND status='completed'",
+    [clientId]
+  );
+  return parseInt(rows[0].count) === 0;
+}
+
+// ============================================================
 //  BLOCKED PERIODS
 // ============================================================
 async function getBlockedPeriods() {
@@ -300,5 +354,6 @@ module.exports = {
   insertBooking, updateBooking, cancelBooking, markEmailSent,
   getPending24h, getPending1h, getPendingReview, completeBooking,
   getUpcoming, getUpcomingWeekCount,
-  getBlockedPeriods, getBlockedPeriodsForDate, insertBlockedPeriod, deleteBlockedPeriod
+  getBlockedPeriods, getBlockedPeriodsForDate, insertBlockedPeriod, deleteBlockedPeriod,
+  getEmailTemplates, getEmailTemplate, updateEmailTemplate, isFirstVisit
 };
