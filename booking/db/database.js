@@ -251,7 +251,8 @@ async function getPendingReview() {
   const now = Date.now();
   return all.filter(b => {
     if (b.email_review_sent) return false;
-    return (now - new Date(b.datum_vrijeme).getTime()) >= 30 * 60 * 1000;
+    const diff = now - new Date(b.datum_vrijeme).getTime();
+    return diff >= 30 * 60 * 1000 && diff <= 60 * 60 * 1000;
   });
 }
 
