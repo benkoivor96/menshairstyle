@@ -1,20 +1,31 @@
 require('dotenv').config();
-const nodemailer = require('nodemailer');
 const db = require('../db/database');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
-
-const FROM = `"${process.env.FROM_NAME || "Men's Hair Style"}" <${process.env.FROM_EMAIL}>`;
+const FROM_EMAIL = process.env.FROM_EMAIL || 'info@menshairstyle.eu';
+const FROM_NAME = process.env.FROM_NAME || "Men's Hair Style";
 const SALON_ADDRESS = 'Horvaćanska cesta 160, 10000 Zagreb';
 const SALON_PHONE = '091 739 7846';
+
+async function sendEmail({ to, toName, subject, html }) {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      sender: { name: FROM_NAME, email: FROM_EMAIL },
+      to: [{ email: to, name: toName || '' }],
+      subject,
+      htmlContent: html
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Brevo API error ${res.status}: ${err}`);
+  }
+  return res.json();
+}
 
 function formatDateTime(dt) {
   const d = new Date(dt);
@@ -82,7 +93,6 @@ function renderBody(templateBody, booking) {
     body = body.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), val);
   }
 
-  // Convert plain text paragraphs to HTML
   body = body.split('\n\n').map(p => {
     if (p.includes('<div') || p.includes('<a ')) return p;
     return `<p>${p.replace(/\n/g, '<br>')}</p>`;
@@ -93,9 +103,9 @@ function renderBody(templateBody, booking) {
 
 async function sendConfirmation(booking) {
   const tmpl = await db.getEmailTemplate('confirmation');
-  return transporter.sendMail({
-    from: FROM,
+  return sendEmail({
     to: booking.email,
+    toName: `${booking.ime} ${booking.prezime}`,
     subject: tmpl.subject,
     html: baseTemplate(renderBody(tmpl.body, booking))
   });
@@ -103,9 +113,9 @@ async function sendConfirmation(booking) {
 
 async function send24hReminder(booking) {
   const tmpl = await db.getEmailTemplate('reminder_24h');
-  return transporter.sendMail({
-    from: FROM,
+  return sendEmail({
     to: booking.email,
+    toName: `${booking.ime} ${booking.prezime}`,
     subject: tmpl.subject,
     html: baseTemplate(renderBody(tmpl.body, booking))
   });
@@ -113,9 +123,9 @@ async function send24hReminder(booking) {
 
 async function send1hReminder(booking) {
   const tmpl = await db.getEmailTemplate('reminder_1h');
-  return transporter.sendMail({
-    from: FROM,
+  return sendEmail({
     to: booking.email,
+    toName: `${booking.ime} ${booking.prezime}`,
     subject: tmpl.subject,
     html: baseTemplate(renderBody(tmpl.body, booking))
   });
@@ -123,9 +133,9 @@ async function send1hReminder(booking) {
 
 async function sendReviewRequest(booking) {
   const tmpl = await db.getEmailTemplate('review');
-  return transporter.sendMail({
-    from: FROM,
+  return sendEmail({
     to: booking.email,
+    toName: `${booking.ime} ${booking.prezime}`,
     subject: tmpl.subject,
     html: baseTemplate(renderBody(tmpl.body, booking))
   });
