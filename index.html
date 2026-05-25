@@ -626,7 +626,7 @@ ul { list-style: none; }
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
-  margin-bottom: 40px;
+  margin-bottom: 6px;
 }
 .insta-grid .img-placeholder {
   aspect-ratio: 1;
@@ -653,7 +653,50 @@ ul { list-style: none; }
   border-color: var(--border-gold-hover);
   transform: scale(1.03);
 }
-.insta-cta { text-align: center; }
+.insta-cta { text-align: center; margin-top: 40px; }
+
+/* Pet featured */
+.insta-pet {
+  margin-bottom: 0;
+  margin-top: 0;
+}
+.insta-pet-img {
+  display: block;
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 16 / 7;
+}
+.insta-pet-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 88%;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.insta-pet-img:hover img { transform: scale(1.03); }
+.insta-pet-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(194,164,126,0.35);
+  border-radius: 4px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.insta-pet-badge span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
 
 /* ============================================================
    8. REVIEWS SECTION — Google-style cards
@@ -922,6 +965,15 @@ ul { list-style: none; }
   .hero-title { font-size: 34px; }
   .insta-grid { grid-template-columns: repeat(2, 1fr); }
   .why-grid { grid-template-columns: 1fr; }
+  .insta-pet-badge { padding: 3px 7px; }
+  .insta-pet-badge span { font-size: 8px; letter-spacing: 1px; }
+}
+
+@media (min-width: 901px) {
+  .insta-pet {
+    width: calc(50% - 3px);
+    margin-left: calc(25% + 1.5px);
+  }
 }
 </style>
 </head>
@@ -1132,6 +1184,15 @@ ul { list-style: none; }
       <a href="https://www.instagram.com/men_s_hairstyle/" target="_blank" rel="noopener" class="insta-item reveal reveal-d2"><img src="ig7.jpeg" alt="Men's Hair Style"></a>
       <a href="https://www.instagram.com/men_s_hairstyle/" target="_blank" rel="noopener" class="insta-item reveal reveal-d3"><img src="ig8.jpeg" alt="Men's Hair Style"></a>
     </div>
+    <div class="insta-pet reveal">
+      <a href="https://www.instagram.com/men_s_hairstyle/" target="_blank" rel="noopener" class="insta-pet-img">
+        <img src="psi.jpeg" alt="Pet friendly salon">
+        <div class="insta-pet-badge">
+          <span>🐾 Pet Friendly Salon</span>
+        </div>
+      </a>
+    </div>
+
     <div class="insta-cta reveal">
       <a href="https://www.instagram.com/men_s_hairstyle/" target="_blank" rel="noopener" class="btn-outline">Zaprati nas na Instagramu</a>
     </div>
