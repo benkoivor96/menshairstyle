@@ -40,7 +40,7 @@ async function runReminders() {
         await email.sendReviewRequest(booking);
         log(`Review request poslan za booking #${booking.id} (${booking.ime} ${booking.prezime})`);
       }
-      await db.completeBooking(booking.id);
+      await db.markEmailSent('email_review_sent', booking.id);
     } catch (err) {
       log(`GREŠKA review request booking #${booking.id}: ${err.message}`);
     }
