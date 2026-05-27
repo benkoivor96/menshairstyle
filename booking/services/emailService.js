@@ -30,6 +30,7 @@ async function sendEmail({ to, toName, subject, html }) {
 function formatDateTime(dt) {
   const d = new Date(dt);
   return d.toLocaleString('hr-HR', {
+    timeZone: 'Europe/Zagreb',
     weekday: 'long', year: 'numeric', month: 'long',
     day: 'numeric', hour: '2-digit', minute: '2-digit'
   });
