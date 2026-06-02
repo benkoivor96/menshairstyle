@@ -226,9 +226,24 @@ async function _getPendingBookings() {
   return rows;
 }
 
+// datum_vrijeme je pohranjen kao TEXT (lokalno Croatian time).
+// Ova funkcija vraća trenutno Zagreb lokalno vrijeme kao naive UTC ms,
+// što odgovara načinu na koji su termini pohranjeni.
+function getNaiveNow() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Zagreb',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  }).formatToParts(new Date());
+  const p = {};
+  parts.forEach(({ type, value }) => p[type] = value);
+  return new Date(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`).getTime();
+}
+
 async function getPending24h() {
   const all = await _getPendingBookings();
-  const now = Date.now();
+  const now = getNaiveNow();
   return all.filter(b => {
     if (b.email_24h_sent) return false;
     const diff = (new Date(b.datum_vrijeme).getTime() - now) / 36e5;
@@ -238,7 +253,7 @@ async function getPending24h() {
 
 async function getPending1h() {
   const all = await _getPendingBookings();
-  const now = Date.now();
+  const now = getNaiveNow();
   return all.filter(b => {
     if (b.email_1h_sent) return false;
     const diff = (new Date(b.datum_vrijeme).getTime() - now) / 36e5;
@@ -248,7 +263,7 @@ async function getPending1h() {
 
 async function getPendingReview() {
   const all = await _getPendingBookings();
-  const now = Date.now();
+  const now = getNaiveNow();
   return all.filter(b => {
     if (b.email_review_sent) return false;
     const diff = now - new Date(b.datum_vrijeme).getTime();
