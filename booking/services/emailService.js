@@ -16,6 +16,7 @@ async function sendEmail({ to, toName, subject, html }) {
     body: JSON.stringify({
       sender: { name: FROM_NAME, email: FROM_EMAIL },
       to: [{ email: to, name: toName || '' }],
+      replyTo: { email: 'anamarijabogdanic532@gmail.com', name: FROM_NAME },
       subject,
       htmlContent: html
     })
