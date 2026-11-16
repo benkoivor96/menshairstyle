@@ -873,16 +873,78 @@ ul { list-style: none; }
   margin: 0 auto;
   color: var(--text-muted);
 }
-.cjenik-img-wrap {
-  max-width: 560px;
-  margin: 0 auto;
+/* Modal */
+.cjenik-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
-.cjenik-img {
+.cjenik-modal-overlay.open {
+  display: flex;
+}
+.cjenik-modal {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  max-width: 680px;
   width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 4px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 40px;
+  position: relative;
+}
+.cjenik-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.cjenik-modal-close:hover { color: var(--gold); }
+.cjenik-modal h3 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 24px 0 8px;
+}
+.cjenik-modal h3:first-of-type { margin-top: 0; }
+.cjenik-modal table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+.cjenik-modal table tr {
+  border-bottom: 1px solid var(--border-gold);
+}
+.cjenik-modal table tr:last-child { border-bottom: none; }
+.cjenik-modal table td {
+  padding: 11px 0;
+  font-size: 14px;
+  color: var(--text-body);
+}
+.cjenik-modal table td:last-child {
+  text-align: right;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.cjenik-modal-footer {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-gold);
+  text-align: center;
 }
 .cjenik-cta {
   text-align: center;
@@ -1200,19 +1262,78 @@ section, .about, .services, .why, .instagram, .reviews {
     <div class="cjenik-header reveal">
       <p class="section-label">Cjenik</p>
       <h2 class="section-title">Naše Cijene</h2>
-      <p class="section-sub">Sve cijene su izražene u eurima.</p>
+      <p class="section-sub">Pogledaj kompletan cjenik usluga i proizvoda.</p>
     </div>
-    <div class="cjenik-img-wrap reveal reveal-d1">
-      <img src="cjenik.jpeg" alt="Men's Hairstyle cjenik" class="cjenik-img">
+    <div class="cjenik-cta reveal reveal-d1">
+      <button class="btn" onclick="document.getElementById('cjenikModal').classList.add('open')">
+        Pogledaj cjenik
+      </button>
     </div>
-    <div class="cjenik-cta reveal reveal-d2">
+  </div>
+</section>
+
+<!-- CJENIK MODAL -->
+<div class="cjenik-modal-overlay" id="cjenikModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="cjenik-modal">
+    <button class="cjenik-modal-close" onclick="document.getElementById('cjenikModal').classList.remove('open')">&times;</button>
+
+    <h3>Šišanje</h3>
+    <table>
+      <tr><td>Muško klasično šišanje</td><td>15 €</td></tr>
+      <tr><td>Muško klasično šišanje + pranje</td><td>16 €</td></tr>
+      <tr><td>Muško šišanje fade</td><td>19 €</td></tr>
+      <tr><td>Muško šišanje fade + pranje</td><td>20 €</td></tr>
+      <tr><td>Polu šišanje</td><td>10 €</td></tr>
+      <tr><td>Duga kosa šišanje</td><td>30 €</td></tr>
+      <tr><td>Šišanje duge kose na kratku s pranjem kose</td><td>35 €</td></tr>
+      <tr><td>Dječije šišanje do 6 godina</td><td>10 €</td></tr>
+    </table>
+
+    <h3>Brada</h3>
+    <table>
+      <tr><td>Uređivanje brade s britvom</td><td>11 €</td></tr>
+      <tr><td>Uređivanje brade s mašinicom</td><td>10 €</td></tr>
+      <tr><td>Brijanje brade</td><td>8 €</td></tr>
+    </table>
+
+    <h3>Bojanje kose</h3>
+    <table>
+      <tr><td>Blajhanje kose, preljev, šišanje</td><td>70 €</td></tr>
+      <tr><td>Pramenovi na kapu, preljev, fade</td><td>55 €</td></tr>
+      <tr><td>Bojanje + fade (kosa)</td><td>40 €</td></tr>
+      <tr><td>Bojanje + fade + brada</td><td>45 €</td></tr>
+      <tr><td>Preljev za kosu</td><td>15 €</td></tr>
+    </table>
+
+    <h3>Ostale usluge</h3>
+    <table>
+      <tr><td>Dizajn + fade</td><td>20 €</td></tr>
+      <tr><td>Pranje kose</td><td>3 €</td></tr>
+      <tr><td>Pranje duge kose</td><td>10 €</td></tr>
+      <tr><td>Masaža vlasišta 3–5 minuta</td><td>6 €</td></tr>
+    </table>
+
+    <h3>Proizvodi za kosu</h3>
+    <table>
+      <tr><td>Uppercut pasta za kosu</td><td>25 €</td></tr>
+      <tr><td>Uppercut sprej za kosu Clay</td><td>22 €</td></tr>
+      <tr><td>Deluxe pomada</td><td>22 €</td></tr>
+      <tr><td>Salt spray</td><td>20 €</td></tr>
+    </table>
+
+    <h3>Proizvodi za bradu</h3>
+    <table>
+      <tr><td>Beard balm</td><td>16 €</td></tr>
+    </table>
+
+    <div class="cjenik-modal-footer">
       <a href="cjenik.pdf" download class="btn-pdf">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Preuzmi cjenik (PDF)
       </a>
     </div>
   </div>
-</section>
+</div>
 
 <!-- ============================================================
      6. WHY US SECTION
